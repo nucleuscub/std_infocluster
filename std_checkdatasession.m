@@ -21,6 +21,9 @@
 % Outputs:
 %    STUDY  - studyset structure containing some or all files in ALLEEG
 %             (datasetinfo.session updated)
+%    flags  - Vector of the dimension of the numbre of subjects (Ordered as
+%    in STUDY.datasetinfo) with the information if the subject have dataset
+%    from different sesssions (1) or not (0)
 %
 % See also:
 %   std_plotinfocluster
@@ -43,7 +46,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function STUDY = std_checkdatasession(STUDY, ALLEEG,varargin)
+function [STUDY,flags] = std_checkdatasession(STUDY, ALLEEG,varargin)
 
 
 %--------------------------------------------------------------------------
@@ -97,6 +100,11 @@ if isempty(g.session)
     end
     
     if g.verbose, display('--- Session fields in current STUDY succesfully updated ---'); end;
+    
+    flags = zeros(1,length(UniqueSubj));
+    for i = 1: length(UniqueSubj)
+        flags(i) = ~isequal(STUDY.datasetinfo(find(strcmp({STUDY.datasetinfo.subject},UniqueSubj{i}))).session);
+    end
     
 % Updating field with custom info
 elseif ~(isempty(g.session))
