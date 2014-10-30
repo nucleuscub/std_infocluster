@@ -103,7 +103,9 @@ if isempty(g.session)
     
     flags = zeros(1,length(UniqueSubj));
     for i = 1: length(UniqueSubj)
-        flags(i) = ~isequal(STUDY.datasetinfo(find(strcmp({STUDY.datasetinfo.subject},UniqueSubj{i}))).session);
+        if length({STUDY.datasetinfo(find(strcmp({STUDY.datasetinfo.subject},UniqueSubj{i}))).session}) ~= 1
+            flags(i) = ~isequal(STUDY.datasetinfo(find(strcmp({STUDY.datasetinfo.subject},UniqueSubj{i}))).session);
+        end
     end
     
 % Updating field with custom info
