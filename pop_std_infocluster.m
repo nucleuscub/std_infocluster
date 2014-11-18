@@ -125,7 +125,7 @@ if nargin < 3 || pop_flag ==1
     handles.popup_parent = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
     set(handles.popup_parent,'String',poplist1,'Units', 'Normalized','Position',[.345 .582 .624 .204]); % insert list of clusters
     
-    poplist2 = {'No. ICs';'No. ERP'};
+    poplist2 = {'Number of ICs';'Variance';'Number of ERPs'};
     handles.popup_prop = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
     set(handles.popup_prop,'String',poplist2,'Units', 'Normalized','Position',[.345 .206 .624 .204]);   % insert new metrics
     
@@ -160,7 +160,7 @@ if nargin < 3 || pop_flag ==1
     set(handles.button_ok,'String','OK','Units', 'Normalized','Position',[0.765 0.044 0.2 0.083],'CallBack', {@callback_button_ok,handles});
     
     handles.button_opt = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_opt,'String','Opt','Units', 'Normalized','Position',[0.765 0.151 0.2 0.083],'CallBack',@callback_button_opts);
+    set(handles.button_opt,'String','Options','Units', 'Normalized','Position',[0.765 0.151 0.2 0.083],'CallBack',@callback_button_opts);
     
     % .........................................................................
     uiwait(handles.mainfig);
