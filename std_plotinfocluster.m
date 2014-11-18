@@ -73,9 +73,9 @@ end
 
 
 % Settings
-% icadefs;
+icadefs;
 colormap('jet');                                                           % Def colormap
-% color = BACKEEGLABCOLOR;
+color = BACKEEGLABCOLOR;
 
 % Getting clusters names
 hits_temp = cellfun(@(x)strcmp(x,parentcluster),{STUDY.cluster.name});
@@ -132,7 +132,8 @@ UniqSubjInd = cell2mat(UniqSubjInd_tmp);
 if g.plot
     % Making FIG
     h = figure('Name', ['Cluster Info: ' parentcluster],...
-               'numbertitle', 'off');                                      
+               'numbertitle', 'off',...
+               'Color', color);                                      
     
     set(h, 'ToolBar', 'none');
     left = 0.05; bottom = 0.3; width = 0.8; height = 0.7;
