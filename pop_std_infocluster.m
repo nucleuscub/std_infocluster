@@ -115,19 +115,19 @@ if nargin < 3 || pop_flag ==1
     
     % Texts
     handles.Text2 = uicontrol('Parent', handles.Panel1,'Style','Text');
-    set(handles.Text2,'String','Parent Cluster','Units', 'Normalized','BackgroundColor',color,'Position',[.035 .626 .239 .143]);
+    set(handles.Text2,'String','Parent Cluster','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[.035 .626 .239 .143]);
     
     handles.Text1 = uicontrol('Parent', handles.Panel1,'Style','Text');
-    set(handles.Text1,'String','Properties','Units', 'Normalized','BackgroundColor',color,'Position',[.035 .231 .175 .165]);
+    set(handles.Text1,'String','Properties','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[.035 .231 .175 .165]);
     
     % Popupmenus
     poplist1 = unique([STUDY.cluster.parent]);
     handles.popup_parent = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
-    set(handles.popup_parent,'String',poplist1,'Units', 'Normalized','Position',[.345 .582 .624 .204]); % insert list of clusters
+    set(handles.popup_parent,'String',poplist1,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.345 .582 .624 .204]); % insert list of clusters
     
-    poplist2 = {'Number of ICs';'Variance';'Number of ERPs'};
+    poplist2 = {'Number of ICs';'Number of ERPs'};
     handles.popup_prop = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
-    set(handles.popup_prop,'String',poplist2,'Units', 'Normalized','Position',[.345 .206 .624 .204]);   % insert new metrics
+    set(handles.popup_prop,'String',poplist2,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.345 .206 .624 .204]);   % insert new metrics
     
     
     % Panel 2
@@ -137,30 +137,30 @@ if nargin < 3 || pop_flag ==1
     
     % Edit
     handles.edit_save = uicontrol('Parent', handles.Panel2,'Style','Edit');
-    set(handles.edit_save,'Units', 'Normalized','BackgroundColor',[1 1 1],'enable', 'off','Position',[.05 .258 .765 .303]);
+    set(handles.edit_save,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',[1 1 1],'enable', 'off','Position',[.05 .258 .765 .303]);
     
     % Button
     handles.button_path = uicontrol('Parent', handles.Panel2,'Style','PushButton');
-    set(handles.button_path,'String','...','Units', 'Normalized','enable', 'off','Position',[.85 .242 .091 .318],'CallBack', {@callback_button_path,handles});
+    set(handles.button_path,'String','...','FontSize',GUI_FONTSIZE,'Units', 'Normalized','enable', 'off','Position',[.85 .242 .091 .318],'CallBack', {@callback_button_path,handles});
     
     %Checkox
     handles.checkbox_save = uicontrol('Parent', handles.Panel2,'Style','checkbox');
-    set(handles.checkbox_save,'String','Save Analysis','Units', 'Normalized','BackgroundColor',color,'Position',[0.05 .621 .345 .273],...
+    set(handles.checkbox_save,'String','Save Analysis','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[0.05 .621 .345 .273],...
         'CallBack', {@callback_chckbutton_save,handles});
     
     % Buttoms
     % .........................................................................
     button_help = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(button_help,'String','Help','Units', 'Normalized','Position',[0.035 0.044 0.2 0.083],'CallBack', @callback_button_help);
+    set(button_help,'String','Help','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.035 0.044 0.2 0.083],'CallBack', @callback_button_help);
     
     handles.button_cancel = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_cancel,'String','Cancel','Units', 'Normalized','Position',[0.49 0.044 0.2 0.083],'CallBack', {@callback_buton_cancel,handles.mainfig});
+    set(handles.button_cancel,'String','Cancel','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.49 0.044 0.2 0.083],'CallBack', {@callback_buton_cancel,handles.mainfig});
     
     handles.button_ok = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_ok,'String','OK','Units', 'Normalized','Position',[0.765 0.044 0.2 0.083],'CallBack', {@callback_button_ok,handles});
+    set(handles.button_ok,'String','OK','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.765 0.044 0.2 0.083],'CallBack', {@callback_button_ok,handles});
     
     handles.button_opt = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_opt,'String','Options','Units', 'Normalized','Position',[0.765 0.151 0.2 0.083],'CallBack',@callback_button_opts);
+    set(handles.button_opt,'String','Options','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.765 0.151 0.2 0.083],'CallBack',@callback_button_opts);
     
     % .........................................................................
     uiwait(handles.mainfig);
