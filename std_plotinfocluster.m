@@ -75,6 +75,8 @@ end
 % Settings
 icadefs;
 colormap('jet');                                                           % Def colormap
+LABEL_FONTSIZE = 12;
+SLABEL_FONTSIZE = 10;
 color = BACKEEGLABCOLOR;
 
 % Getting clusters names
@@ -164,23 +166,23 @@ if g.plot
         end
     end
     
-    gridlabel = strtrim(cellstr(gridlabel));                               % Remove any space padding
-    [x,y]     = meshgrid(1:size(mat2plot,2),1:size(mat2plot,1));           % Create x and y coordinates for the strings
+    gridlabel = strtrim(cellstr(gridlabel));                                                % Remove any space padding
+    [x,y]     = meshgrid(1:size(mat2plot,2),1:size(mat2plot,1));                            % Create x and y coordinates for the strings
     
-    text(x(:),y(:),gridlabel(:),'HorizontalAlignment','center');           % Plot the strings (,'FontWeight','bold')
-    ylabel('Clusters','FontWeight','bold');                                % Y Labels
+    text(x(:),y(:),gridlabel(:),'HorizontalAlignment','center','FontSize',SLABEL_FONTSIZE); % Plot the strings (,'FontWeight','bold')
+    ylabel('Clusters','FontWeight','bold','FontSize',LABEL_FONTSIZE);                       % Y Labels
     
-    set(gca,'XLim',[0.5 size(mat2plot,2) + 0.5]);                          % Setting the X limits
-    set(gca,'YLim',[0.5 size(mat2plot,1) + 0.5]);                          % Setting the Y limits
+    set(gca,'XLim',[0.5 size(mat2plot,2) + 0.5]);                                           % Setting the X limits
+    set(gca,'YLim',[0.5 size(mat2plot,1) + 0.5]);                                           % Setting the Y limits
     
-    set(gca, 'Xtick',1:size(mat2plot,2));                                  % Setting the X ticks
-    set(gca, 'Ytick',1:size(mat2plot,1)) ;                                 % Setting the Y ticks
+    set(gca, 'Xtick',1:size(mat2plot,2));                                                   % Setting the X ticks
+    set(gca, 'Ytick',1:size(mat2plot,1)) ;                                                  % Setting the Y ticks
     
-    set(gca,'YTickLabel',cls_names);                                       % Note: need to pick the real plotted subj
+    set(gca,'YTickLabel',cls_names,'FontSize',LABEL_FONTSIZE);                              % Note: need to pick the real plotted subj
                                 
-    tmp_caxis = caxis;                                                     % Color plot
-    caxis([-max(tmp_caxis) max(tmp_caxis)]);                               % ...
-    colormap(b2r(-max(tmp_caxis), max(tmp_caxis)));                        % ...                     
+    tmp_caxis = caxis;                                                                      % Color plot
+    caxis([-max(tmp_caxis) max(tmp_caxis)]);                                                % ...
+    colormap(b2r(-max(tmp_caxis), max(tmp_caxis)));                                         % ...                     
     
     grid on;
     % box off;
@@ -191,14 +193,15 @@ if g.plot
     
     bar(sum(mat2plot,1));
     
-    ylabel('No ICs','FontWeight','bold');                                  % Y Labels
-    xlabel('Subjects/Datasets','FontWeight','bold');                       % X Labels
-    set(gca,'XLim',[0.5 size(mat2plot,2) + 0.5]);                          % Setting the X limits
-    set(gca,'YLim',[0 max(sum(mat2plot,1))*(1 + 0.1)]);                    % Setting the Y limits
+    ylabel('No ICs','FontWeight','bold','FontSize',LABEL_FONTSIZE);             % Y Labels
+    xlabel('Subjects/Datasets','FontWeight','bold','FontSize',LABEL_FONTSIZE);  % X Labels
+    set(gca,'XLim',[0.5 size(mat2plot,2) + 0.5]);                              % Setting the X limits
+    set(gca,'YLim',[0 max(sum(mat2plot,1))*(1 + 0.1)]);                        % Setting the Y limits
     
-    colormap(b2r(-max(tmp_caxis), max(tmp_caxis)));                        % Color plot
+    colormap(b2r(-max(tmp_caxis), max(tmp_caxis)));                            % Color plot
     
-    set(gca,'XTickLabel',{STUDY.datasetinfo(UniqSubjInd).subject});        % Setting the X ticks
+    set(gca,'XTickLabel',{STUDY.datasetinfo(UniqSubjInd).subject},...          % Setting the X ticks         
+            'FontSize',LABEL_FONTSIZE);                               
     % box off;
     
     % FIGURE 3 ----------------------------------------------------------------
@@ -213,7 +216,7 @@ if g.plot
     
     colormap(b2r(-max(tmp_caxis), max(tmp_caxis)));                        % Color plot
     
-    ylabel('No ICs','FontWeight','bold');                                  % Y Labels
+    ylabel('No ICs','FontWeight','bold','FontSize',LABEL_FONTSIZE);        % Y Labels
     
     % box off;
 end
