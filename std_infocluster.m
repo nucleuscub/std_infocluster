@@ -48,7 +48,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [STUDY , clust_statout] = std_infocluster(STUDY, ALLEEG, varargin)
+function [STUDY , clust_statout,clust_statout2] = std_infocluster(STUDY, ALLEEG, varargin)
 
 % Checking entries
 if nargin < 2
@@ -56,6 +56,9 @@ if nargin < 2
     return;
 end
 
+clust_statout  = [];
+clust_statout2 = [];
+clust_stat     = [];
 try
     options = varargin;
     if ~isempty( varargin ),
@@ -86,16 +89,23 @@ if sum(IsSession) ~= length(IsSession)
     STUDY = std_checkdatasession(STUDY, ALLEEG, 'verbose', g.verbose);
 end
 
-%Parsing info from clusters
+%Parsing info from clusters and doing some stats
 [clust_stat,SubjClusIC_Matrix] = parse_clustinfo(STUDY,g.parentcluster);
-
+clust_stat                     = std_clustat(STUDY,g.parentcluster,'cls_stat',clust_stat);
 
 % Plots
 %..........................................................................
-
-% 1 - IC Vs Subj Vs Cluster (that is why infloclust3d)
-
-[mat2plot, UniqSubjInd] = std_plotinfocluster(STUDY,SubjClusIC_Matrix,g.parentcluster,'plot',g.plotinfo,'figlabel',g.figlabel);
+if (g.plotinfo == 1)
+    switch g.calc
+        case 1
+            % 1 - IC Vs Subj Vs Cluster (that is why infloclust3d)
+            [mat2plot, UniqSubjInd] = std_plotinfocluster(STUDY,SubjClusIC_Matrix,g.parentcluster,'plot',g.plotinfo,'figlabel',g.figlabel);
+            
+        case 2
+            % 2 -Compactnes of clusters 
+            std_plotclsmeasure(clust_stat.stats,g.calc-1);   
+    end
+end
 
 %..........................................................................
 
@@ -142,8 +152,9 @@ if g.csvsave
         fprintf(fid,'%s\r\n',data2print);
         fclose(fid);
     end
+     if g.verbose, display(['File successfully saved: ' filename_out1]); end;
         
-    % 2) text file output of the Clsuter, Number of ICs, and  Number of Unique subjects in separate columns.
+    % 2) text file output of the Cluster, Number of ICs, and  Number of Unique subjects in separate columns.
     
     filename_out2 = [g.savepath filesep g.filename '_unique_ICs_Subj.txt'];
     
@@ -174,7 +185,10 @@ if g.csvsave
         fprintf(fid,'%s\r\n',data2print);
         fclose(fid);
     end
+    if g.verbose, display(['File successfully saved: ' filename_out2 ]); end;
 end
 
 %..........................................................................
-clust_statout = clust_stat.clust;
+if isfield(clust_stat,'clust')
+    clust_statout = clust_stat.clust;
+end
