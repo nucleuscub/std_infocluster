@@ -69,15 +69,15 @@ catch
 end;
 
 pop_flag = 0;
-try g.parentcluster;     catch, g.parentcluster   = STUDY.cluster(1).name; pop_flag = 1;         end; % By default the 1st cluster
-try g.keepsession;       catch, g.keepsession     = 1;                     pop_flag = 1;         end; % Keep original session info
-try g.plotinfo;          catch, g.plotinfo        = 1;                     pop_flag = 1;         end; % Plot by default
-try g.csvsave;           catch, g.csvsave         = 0;                     pop_flag = 1;         end; % Save as CSV
-try g.savepath;          catch, g.savepath        = STUDY.filepath;        pop_flag = 1;         end; % Path to save
-try g.filename;          catch, g.filename        = STUDY.name;            pop_flag = 1;         end; % Path to save
-try g.verbose;           catch, g.verbose         = 1;                     pop_flag = 1;         end; % verbose
-try g.calc;              catch, g.calc            = 1;                     pop_flag = 1;         end; % Choose what to calc
-try g.figlabel;          catch, g.figlabel        = 1;                     pop_flag = 1;         end; % Show labels in fig
+try g.parentcluster;     catch, g.parentcluster   = STUDY.cluster(1).name;     pop_flag = 1;         end; % By default the 1st cluster
+try g.keepsession;       catch, g.keepsession     = 1;                         pop_flag = 1;         end; % Keep original session info
+try g.plotinfo;          catch, g.plotinfo        = 1;                         pop_flag = 1;         end; % Plot by default
+try g.csvsave;           catch, g.csvsave         = 0;                         pop_flag = 1;         end; % Save as CSV
+try g.savepath;          catch, g.savepath        = STUDY.filepath;            pop_flag = 1;         end; % Path to save
+try g.filename;          catch, g.filename        = [STUDY.name '_IC_Subj'];   pop_flag = 1;         end; % Path to save
+try g.verbose;           catch, g.verbose         = 1;                         pop_flag = 1;         end; % verbose
+try g.calc;              catch, g.calc            = 1;                         pop_flag = 1;         end; % Choose what to calc
+try g.figlabel;          catch, g.figlabel        = 1;                         pop_flag = 1;         end; % Show labels in fig
 
 % Pop up window
 if nargin < 3 || pop_flag ==1
@@ -106,61 +106,61 @@ if nargin < 3 || pop_flag ==1
                              'NumberTitle','off',...
                              'Units', 'Normalized',...
                              'Color', color,...
-                             'Position',[0.43,0.54,0.24,0.27]);
+                             'Position',[0.433,0.672,0.237,0.147]);
     
     % Panel 1
     % .........................................................................
     handles.Panel1 = uipanel('Parent', handles.mainfig,'Units', 'Normalized','BackgroundColor',color,...
-        'Position',[0.032,0.575,0.936,0.376]);
+        'Position',[0.029,0.475,0.945,0.458]);
     
     % Texts
     handles.Text2 = uicontrol('Parent', handles.Panel1,'Style','Text');
-    set(handles.Text2,'String','Parent Cluster','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[.035 .626 .239 .143]);
+    set(handles.Text2,'String','Parent Cluster','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[.034 .62 .315 .211]);
     
     handles.Text1 = uicontrol('Parent', handles.Panel1,'Style','Text');
-    set(handles.Text1,'String','Properties','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[.035 .231 .175 .165]);
+    set(handles.Text1,'String','Properties','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[.034 .069 .236 .285]);
     
     % Popupmenus
     poplist1 = unique([STUDY.cluster.parent]);
     handles.popup_parent = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
-    set(handles.popup_parent,'String',poplist1,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.345 .582 .624 .204]); % insert list of clusters
+    set(handles.popup_parent,'String',poplist1,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.35 .545 .624 .347]); % insert list of clusters
     
-    poplist2 = {'Number of ICs';'Number of ERPs'};
+    poplist2 = {'Number of ICs';'Deviation from Centroid'};
     handles.popup_prop = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
-    set(handles.popup_prop,'String',poplist2,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.345 .206 .624 .204]);   % insert new metrics
+    set(handles.popup_prop,'String',poplist2,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.354 .091 .618 .333]);   % insert new metrics
     
     
-    % Panel 2
-    % .........................................................................
-    handles.Panel2 = uipanel('Parent', handles.mainfig,'Units', 'Normalized','BackgroundColor',color,...
-        'Position',[0.032,0.286,0.936,0.270]);
-    
-    % Edit
-    handles.edit_save = uicontrol('Parent', handles.Panel2,'Style','Edit');
-    set(handles.edit_save,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',[1 1 1],'enable', 'off','Position',[.05 .258 .765 .303]);
-    
-    % Button
-    handles.button_path = uicontrol('Parent', handles.Panel2,'Style','PushButton');
-    set(handles.button_path,'String','...','FontSize',GUI_FONTSIZE,'Units', 'Normalized','enable', 'off','Position',[.85 .242 .091 .318],'CallBack', {@callback_button_path,handles});
-    
-    %Checkox
-    handles.checkbox_save = uicontrol('Parent', handles.Panel2,'Style','checkbox');
-    set(handles.checkbox_save,'String','Save Analysis','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[0.05 .621 .345 .273],...
-        'CallBack', {@callback_chckbutton_save,handles});
+%     % Panel 2
+%     % .........................................................................
+%     handles.Panel2 = uipanel('Parent', handles.mainfig,'Units', 'Normalized','BackgroundColor',color,...
+%         'Position',[0.029,0.337,0.947,0.263]);
+%     
+%     % Edit
+%     handles.edit_save = uicontrol('Parent', handles.Panel2,'Style','Edit');
+%     set(handles.edit_save,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',[1 1 1],'enable', 'off','Position',[.05 .175 .765 .384]);
+%     
+%     % Button
+%     handles.button_path = uicontrol('Parent', handles.Panel2,'Style','PushButton');
+%     set(handles.button_path,'String','...','FontSize',GUI_FONTSIZE,'Units', 'Normalized','enable', 'off','Position',[.85 .172 .091 .403],'CallBack', {@callback_button_path,handles});
+%     
+%     %Checkox
+%     handles.checkbox_save = uicontrol('Parent', handles.Panel2,'Style','checkbox');
+%     set(handles.checkbox_save,'String','Export Results','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[0.05 .635 .345 .345],...
+%         'CallBack', {@callback_chckbutton_save,handles});
     
     % Buttoms
     % .........................................................................
     button_help = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(button_help,'String','Help','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.035 0.044 0.2 0.083],'CallBack', @callback_button_help);
+    set(button_help,'String','Help','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.034 0.056 0.205 0.158],'CallBack', @callback_button_help);
     
     handles.button_cancel = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_cancel,'String','Cancel','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.49 0.044 0.2 0.083],'CallBack', {@callback_buton_cancel,handles.mainfig});
+    set(handles.button_cancel,'String','Close','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.493 0.056 0.205 0.158],'CallBack', {@callback_buton_cancel,handles.mainfig});
     
     handles.button_ok = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_ok,'String','OK','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.765 0.044 0.2 0.083],'CallBack', {@callback_button_ok,handles});
+    set(handles.button_ok,'String','Plot','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.772 0.056 0.205 0.158],'CallBack', {@callback_button_ok,handles});
     
     handles.button_opt = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_opt,'String','Options','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.765 0.151 0.2 0.083],'CallBack',@callback_button_opts);
+    set(handles.button_opt,'String','Options','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.772 0.26 0.205 0.158],'CallBack',@callback_button_opts);
     
     % .........................................................................
     uiwait(handles.mainfig);
@@ -231,9 +231,9 @@ opts   = getappdata(0,'opts');                                        % retrievi
 
 opts.parentcluster   = char(get(handles.popup_parent, 'String'));
 opts.calc            = get(handles.popup_prop, 'Value');
-opts.csvsave         = get(handles.checkbox_save,'Value');
+% opts.csvsave         = get(handles.checkbox_save,'Value');
 
-if ~isempty(get(handles.edit_save,'String')), opts.filename = get(handles.edit_save,'String'); end;% csvsave
+% if opts.csvsave == 1,  opts.filename = get(handles.edit_save,'String'); end;% csvsave
 
 
 optionsname = fieldnames(opts);
@@ -248,18 +248,27 @@ for i = 1:length(optionsname)
 end
 
 % Evaluating function
-[STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,args{:});
+functmp = get(handles.popup_prop,'value');
+switch functmp
+    case 1
+        args{find(strcmp(args,'calc'))+1} = 1;
+        [STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,args{:});
+    case {2 3 4}
+        args{find(strcmp(args,'calc'))+1} = 2;
+        args{find(strcmp(args,'plotinfo'))+1} = 1;
+        [STUDY , clust_statout,clust_statout2] = std_infocluster(STUDY,ALLEEG,args{:});  
+end
 
 % Saving data
 
-guidata(src, handles);          % Sending output to main
-setappdata(0,'ALLEEG',ALLEEG);               % Storing ALLEEG
-setappdata(0,'STUDY',STUDY);                 % Storing STUDY
-setappdata(0,'opts',opts);                   % Storing opts
-setappdata(0,'clust_statout',clust_statout); % Storing output
+guidata(src, handles);                            % Sending output to main
+setappdata(0,'ALLEEG',ALLEEG);                    % Storing ALLEEG
+setappdata(0,'STUDY',STUDY);                      % Storing STUDY
+setappdata(0,'opts',opts);                        % Storing opts
+if ~isempty(clust_statout)
+    setappdata(0,'clust_statout',clust_statout);  % Storing output
+end
 setappdata(0,'args',args); % Storing output
-
-close(handles.mainfig); % Closing figure
 
 % _________________________________________________________________________
 function callback_button_help(src,eventdata)
