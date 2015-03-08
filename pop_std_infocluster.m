@@ -48,7 +48,7 @@ function [STUDY, com] = pop_std_infocluster(STUDY, ALLEEG, varargin)
 com = ''; % this initialization ensure that the function will return something
 % if the user press the cancel button
 
-% addpath([pwd filesep 'dependencies']);  % Comment this 
+% addpath([pwd filesep 'dependencies']);  % Comment this
 
 % display help if not enough arguments
 
@@ -84,15 +84,15 @@ if nargin < 3 || pop_flag ==1
     
     % Checking dependencies for GUI
     % NOTE: Move this to the eepluging_std_infocluster once done ----- CHECK THIS
-     PropeditExist =  exist('PropertyEditor', 'file');
-     JidePropExist =  exist('JidePropertyGridField', 'file');
-     
-     if PropeditExist ~= 2 || JidePropExist ~= 2
-         WhereIsInfocluster = which('std_infocluster');
-         [path,name, ext]   = fileparts(WhereIsInfocluster);
-         addpath([path filesep 'dependencies/PropertyGrid-2010-09-16-mod']);
-     end
-     
+    PropeditExist =  exist('PropertyEditor', 'file');
+    JidePropExist =  exist('JidePropertyGridField', 'file');
+    
+    if PropeditExist ~= 2 || JidePropExist ~= 2
+        WhereIsInfocluster = which('std_infocluster');
+        [path,name, ext]   = fileparts(WhereIsInfocluster);
+        addpath([path filesep 'dependencies/PropertyGrid-2010-09-16-mod']);
+    end
+    
     
     icadefs;
     color = BACKEEGLABCOLOR;
@@ -102,11 +102,11 @@ if nargin < 3 || pop_flag ==1
     setappdata(0,'ALLEEG',ALLEEG); %handles.ALLEEG = ALLEEG;
     
     handles.mainfig = figure('MenuBar','none',...
-                             'Name','pop_std_infocluster',...
-                             'NumberTitle','off',...
-                             'Units', 'Normalized',...
-                             'Color', color,...
-                             'Position',[0.433,0.672,0.237,0.147]);
+        'Name','pop_std_infocluster',...
+        'NumberTitle','off',...
+        'Units', 'Normalized',...
+        'Color', color,...
+        'Position',[0.433,0.672,0.237,0.147]);
     
     % Panel 1
     % .........................................................................
@@ -130,23 +130,23 @@ if nargin < 3 || pop_flag ==1
     set(handles.popup_prop,'String',poplist2,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.354 .091 .618 .333]);   % insert new metrics
     
     
-%     % Panel 2
-%     % .........................................................................
-%     handles.Panel2 = uipanel('Parent', handles.mainfig,'Units', 'Normalized','BackgroundColor',color,...
-%         'Position',[0.029,0.337,0.947,0.263]);
-%     
-%     % Edit
-%     handles.edit_save = uicontrol('Parent', handles.Panel2,'Style','Edit');
-%     set(handles.edit_save,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',[1 1 1],'enable', 'off','Position',[.05 .175 .765 .384]);
-%     
-%     % Button
-%     handles.button_path = uicontrol('Parent', handles.Panel2,'Style','PushButton');
-%     set(handles.button_path,'String','...','FontSize',GUI_FONTSIZE,'Units', 'Normalized','enable', 'off','Position',[.85 .172 .091 .403],'CallBack', {@callback_button_path,handles});
-%     
-%     %Checkox
-%     handles.checkbox_save = uicontrol('Parent', handles.Panel2,'Style','checkbox');
-%     set(handles.checkbox_save,'String','Export Results','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[0.05 .635 .345 .345],...
-%         'CallBack', {@callback_chckbutton_save,handles});
+    %     % Panel 2
+    %     % .........................................................................
+    %     handles.Panel2 = uipanel('Parent', handles.mainfig,'Units', 'Normalized','BackgroundColor',color,...
+    %         'Position',[0.029,0.337,0.947,0.263]);
+    %
+    %     % Edit
+    %     handles.edit_save = uicontrol('Parent', handles.Panel2,'Style','Edit');
+    %     set(handles.edit_save,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',[1 1 1],'enable', 'off','Position',[.05 .175 .765 .384]);
+    %
+    %     % Button
+    %     handles.button_path = uicontrol('Parent', handles.Panel2,'Style','PushButton');
+    %     set(handles.button_path,'String','...','FontSize',GUI_FONTSIZE,'Units', 'Normalized','enable', 'off','Position',[.85 .172 .091 .403],'CallBack', {@callback_button_path,handles});
+    %
+    %     %Checkox
+    %     handles.checkbox_save = uicontrol('Parent', handles.Panel2,'Style','checkbox');
+    %     set(handles.checkbox_save,'String','Export Results','FontSize',GUI_FONTSIZE,'Units', 'Normalized','BackgroundColor',color,'Position',[0.05 .635 .345 .345],...
+    %         'CallBack', {@callback_chckbutton_save,handles});
     
     % Buttoms
     % .........................................................................
@@ -225,9 +225,10 @@ function handles = callback_button_ok(src,eventdata,handles)
 options = '';
 
 %Check  and retrieving GUI inputs
-ALLEEG = getappdata(0,'ALLEEG');                                      % retrievineg ALLEEG
-STUDY  = getappdata(0,'STUDY');                                       % retrievineg STUDY
-opts   = getappdata(0,'opts');                                        % retrievineg opts
+ALLEEG    = getappdata(0,'ALLEEG');                                      % retrievineg ALLEEG
+STUDY     = getappdata(0,'STUDY');                                       % retrievineg STUDY
+opts      = getappdata(0,'opts');                                        % retrievineg opts
+flag_run  = 1;                                                           % Status flag 
 
 opts.parentcluster   = char(get(handles.popup_parent, 'String'));
 opts.calc            = get(handles.popup_prop, 'Value');
@@ -251,24 +252,37 @@ end
 functmp = get(handles.popup_prop,'value');
 switch functmp
     case 1
-        args{find(strcmp(args,'calc'))+1} = 1;
-        [STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,args{:});
+        % Check if Figure is already open
+        if isempty(findall(0,'Type','Figure', 'Tag','clusterinfo_plot1'))
+            args{find(strcmp(args,'calc'))+1} = 1;
+            [STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,args{:});
+        else
+            display('pop_std_infocluster: Figure already open');
+            flag_run = 0;
+        end
     case {2 3 4}
-        args{find(strcmp(args,'calc'))+1} = 2;
-        args{find(strcmp(args,'plotinfo'))+1} = 1;
-        [STUDY , clust_statout,clust_statout2] = std_infocluster(STUDY,ALLEEG,args{:});  
+        % Check if Figure is already open
+        if isempty(findall(0,'Type','Figure', 'Tag','clusterinfo_plot2'))
+            args{find(strcmp(args,'calc'))+1} = 2;
+            args{find(strcmp(args,'plotinfo'))+1} = 1;
+            [STUDY , clust_statout,clust_statout2] = std_infocluster(STUDY,ALLEEG,args{:});
+        else
+            display('pop_std_infocluster: Figure already open');
+            flag_run = 0;
+        end
 end
 
 % Saving data
-
-guidata(src, handles);                            % Sending output to main
-setappdata(0,'ALLEEG',ALLEEG);                    % Storing ALLEEG
-setappdata(0,'STUDY',STUDY);                      % Storing STUDY
-setappdata(0,'opts',opts);                        % Storing opts
-if ~isempty(clust_statout)
-    setappdata(0,'clust_statout',clust_statout);  % Storing output
+if flag_run
+    guidata(src, handles);                            % Sending output to main
+    setappdata(0,'ALLEEG',ALLEEG);                    % Storing ALLEEG
+    setappdata(0,'STUDY',STUDY);                      % Storing STUDY
+    setappdata(0,'opts',opts);                        % Storing opts
+    if ~isempty(clust_statout)
+        setappdata(0,'clust_statout',clust_statout);  % Storing output
+    end
+    setappdata(0,'args',args); % Storing output
 end
-setappdata(0,'args',args); % Storing output
 
 % _________________________________________________________________________
 function callback_button_help(src,eventdata)
