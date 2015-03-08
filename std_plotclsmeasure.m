@@ -43,11 +43,14 @@ catch
     BACKEEGLABCOLOR =[.66 .76 1];
     THRESHOLD_BIN = 16;
 end
-SLABEL_FONTSIZE = 8;
+SLABEL_FONTSIZE = 12;
 
 fignames = {'Mean Distance from Centroind', 'Summatory of Distances to Centroid'};
 
-figure('name',fignames{iplot}, 'color', [.66 .76 1]);
+figure('name',fignames{iplot}, ...
+       'color', [.66 .76 1],...
+       'Tag','clusterinfo_plot2',...
+       'numbertitle', 'off');
 hold on;
 
 namemeasure = fieldnames(datmeasures);
@@ -63,6 +66,7 @@ switch iplot
             if i == nplots
                 xlabel('Cluster','fontsize', SLABEL_FONTSIZE,'fontweight','bold');
             end
+           grid on; 
         end
     case 2
         % under development
