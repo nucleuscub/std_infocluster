@@ -89,6 +89,9 @@ cls_names = {STUDY.cluster(cls).name}';
 % Check session in data or take from input (now we assume data is comming with session info)
 
 sessions  = cellfun(@(x) x,{STUDY.datasetinfo.session});
+ if iscell(sessions)
+     sessions = cellfun(@(x) x,sessions);
+ end
 
 % ------------- Check for data in different sessions -------------
 
@@ -136,7 +139,8 @@ if g.plot
     % Making FIG
     h = figure('Name', ['Cluster Info: ' parentcluster],...
                'numbertitle', 'off',...
-               'Color', color);                                      
+               'Color', color,...
+               'Tag','clusterinfo_plot1');                                      
 %     
     set(h, 'ToolBar', 'none');
     left = 0.05; bottom = 0.3; width = 0.8; height = 0.7;
