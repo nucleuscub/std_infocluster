@@ -95,12 +95,8 @@ if nargin < 3 || pop_flag ==1
     
     
     icadefs;
-    color = BACKEEGLABCOLOR;
-    
-    setappdata(0,'STUDY',STUDY);   %handles.STUDY  = STUDY;
-    setappdata(0,'opts',g);        %handles.opts   = g;
-    setappdata(0,'ALLEEG',ALLEEG); %handles.ALLEEG = ALLEEG;
-    
+    color      = BACKEEGLABCOLOR;                        % Background color
+    popup_init = 1;                                      % Initial value of popup_menu
     handles.mainfig = figure('MenuBar','none',...
         'Name','pop_std_infocluster',...
         'NumberTitle','off',...
@@ -108,6 +104,11 @@ if nargin < 3 || pop_flag ==1
         'Color', color,...
         'Position',[0.433,0.672,0.237,0.147]);
     
+    
+    setappdata(handles.mainfig,'STUDY',STUDY);           %handles.STUDY  = STUDY;
+    setappdata(handles.mainfig,'opts',g);                %handles.opts   = g;
+    setappdata(handles.mainfig,'ALLEEG',ALLEEG);         %handles.ALLEEG = ALLEEG;
+    setappdata(handles.mainfig,'popup_init',popup_init); %handles.ALLEEG = ALLEEG;
     % Panel 1
     % .........................................................................
     handles.Panel1 = uipanel('Parent', handles.mainfig,'Units', 'Normalized','BackgroundColor',color,...
@@ -123,7 +124,7 @@ if nargin < 3 || pop_flag ==1
     % Popupmenus
     poplist1 = unique([STUDY.cluster.parent]);
     handles.popup_parent = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
-    set(handles.popup_parent,'String',poplist1,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.35 .545 .624 .347]); % insert list of clusters
+    set(handles.popup_parent,'String',poplist1,'FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[.35 .545 .624 .347],'CallBack',{@callback_changeparent,handles}); % insert list of clusters
     
     poplist2 = {'Number of ICs';'Deviation from Centroid'};
     handles.popup_prop = uicontrol('Parent', handles.Panel1,'Style','Popupmenu');
@@ -160,17 +161,17 @@ if nargin < 3 || pop_flag ==1
     set(handles.button_ok,'String','Plot','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.772 0.056 0.205 0.158],'CallBack', {@callback_button_ok,handles});
     
     handles.button_opt = uicontrol('Parent', handles.mainfig,'Style','PushButton');
-    set(handles.button_opt,'String','Options','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.772 0.26 0.205 0.158],'CallBack',@callback_button_opts);
+    set(handles.button_opt,'String','Options','FontSize',GUI_FONTSIZE,'Units', 'Normalized','Position',[0.772 0.26 0.205 0.158],'CallBack',{@callback_button_opts,handles.mainfig});
     
     % .........................................................................
     uiwait(handles.mainfig);
     
 end
 % OUTPUTS
-STUDY          = getappdata(0,'STUDY');
-clust_statout  = getappdata(0,'clust_statout');
+STUDY          = getappdata(handles.mainfig,'STUDY');
+clust_statout  = getappdata(handles.mainfig,'clust_statout');
 
-args = getappdata(0,'args');
+args = getappdata(handles.mainfig,'args');
 % com = ['[STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,' args{:}  ');']
 com            = 'Need to be updated';
 
@@ -185,11 +186,11 @@ close(h);
 % _________________________________________________________________________
 function callback_button_path(src,eventdata,handles)
 
-[FolderName] = uigetdir('','Select path to save results');
-
-opts = getappdata(0,'opts');
-opts.savepath = FolderName; % setappdata(0,'handles.opts.savepath',FolderName); % Sending output to main
-setappdata(0,'opts',opts);
+% [FolderName] = uigetdir('','Select path to save results');
+% 
+% opts = getappdata(0,'opts');
+% opts.savepath = FolderName; % setappdata(0,'handles.opts.savepath',FolderName); % Sending output to main
+% setappdata(0,'opts',opts);
 
 % _________________________________________________________________________
 function callback_chckbutton_save(src,eventdata,handles)
@@ -233,9 +234,7 @@ flag_run  = 1;                                                           % Statu
 opts.parentcluster   = char(get(handles.popup_parent, 'String'));
 opts.calc            = get(handles.popup_prop, 'Value');
 % opts.csvsave         = get(handles.checkbox_save,'Value');
-
 % if opts.csvsave == 1,  opts.filename = get(handles.edit_save,'String'); end;% csvsave
-
 
 optionsname = fieldnames(opts);
 args = '';
@@ -250,38 +249,27 @@ end
 
 % Evaluating function
 functmp = get(handles.popup_prop,'value');
-switch functmp
-    case 1
-        % Check if Figure is already open
-        if isempty(findall(0,'Type','Figure', 'Tag','clusterinfo_plot1'))
-            args{find(strcmp(args,'calc'))+1} = 1;
-            [STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,args{:});
-        else
-            display('pop_std_infocluster: Figure already open');
-            flag_run = 0;
-        end
-    case {2 3 4}
-        % Check if Figure is already open
-        if isempty(findall(0,'Type','Figure', 'Tag','clusterinfo_plot2'))
-            args{find(strcmp(args,'calc'))+1} = 2;
-            args{find(strcmp(args,'plotinfo'))+1} = 1;
-            [STUDY , clust_statout,clust_statout2] = std_infocluster(STUDY,ALLEEG,args{:});
-        else
-            display('pop_std_infocluster: Figure already open');
-            flag_run = 0;
-        end
+
+% Check if Figure is already open
+if (functmp==1 && ~isempty(findall(0,'Type','Figure', 'Tag','clusterinfo_plot1'))) | (functmp == 2 && ~isempty(findall(0,'Type','Figure', 'Tag','clusterinfo_plot2')))
+    display('pop_std_infocluster: Figure already open');
+    flag_run = 0;
+else
+    if functmp==1, tmpval = 1; end
+    if functmp==2, tmpval = 2; end
+    args{find(strcmp(args,'calc'))+1} = tmpval;
+    args{find(strcmp(args,'plotinfo'))+1} = 1;
+    args{end+1} = 'handles';args{end+1} = handles;
+    [STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,args{:});
 end
 
 % Saving data
 if flag_run
     guidata(src, handles);                            % Sending output to main
-    setappdata(0,'ALLEEG',ALLEEG);                    % Storing ALLEEG
-    setappdata(0,'STUDY',STUDY);                      % Storing STUDY
-    setappdata(0,'opts',opts);                        % Storing opts
-    if ~isempty(clust_statout)
-        setappdata(0,'clust_statout',clust_statout);  % Storing output
-    end
-    setappdata(0,'args',args); % Storing output
+    setappdata(handles.mainfig,'ALLEEG',ALLEEG);                    % Storing ALLEEG
+    setappdata(handles.mainfig,'STUDY',STUDY);                      % Storing STUDY
+    setappdata(handles.mainfig,'opts',opts);                        % Storing opts
+    setappdata(handles.mainfig,'args',args); % Storing output
 end
 
 % _________________________________________________________________________
@@ -289,9 +277,10 @@ function callback_button_help(src,eventdata)
 
 pophelp('pop_std_infocluster')
 
-function callback_button_opts(src,eventdata)
+% _________________________________________________________________________
+function callback_button_opts(src,eventdata,handles)
 
-opts   = getappdata(0,'opts');                                        % retrievineg opts
+opts   = getappdata(handles,'opts');                                        % retrievineg opts
 
 % create figure
 f = figure( ...
@@ -304,3 +293,11 @@ f = figure( ...
 
 items  = {opts} ;
 editor = PropertyEditor(f, 'Items', items);
+
+% _________________________________________________________________________
+function callback_changeparent(src,eventdata,handles)
+popup_init = getappdata(handles.mainfig,'popup_init');
+if (handles.popup_parent.Value) ~= popup_init
+    setappdata(handles.mainfig,'clust_stat', []);
+    setappdata(handles.mainfig,'SubjClusIC_Matrix', []);
+end
