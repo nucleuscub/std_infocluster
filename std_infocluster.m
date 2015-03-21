@@ -48,7 +48,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [STUDY , clust_statout,clust_statout2] = std_infocluster(STUDY, ALLEEG, varargin)
+function [STUDY , clust_statout] = std_infocluster(STUDY, ALLEEG, varargin)
 
 % Checking entries
 if nargin < 2
@@ -57,7 +57,6 @@ if nargin < 2
 end
 
 clust_statout  = [];
-clust_statout2 = [];
 clust_stat     = [];
 try
     options = varargin;
@@ -79,7 +78,7 @@ try g.filename;          catch, g.filename        = STUDY.name;                 
 try g.verbose;           catch, g.verbose         = 1;                              end; % verbose
 try g.calc;              catch, g.calc            = 1;                              end; % Choose what to calc
 try g.figlabel;          catch, g.figlabel        = 1;                              end; % Show labels in fig
-
+try g.handles;           catch, g.handles         = '';                             end; % Just for calls from GUIs
 
 % Checking for session field
 OrigSession = {STUDY.datasetinfo.session};                     % Backing up session info
@@ -88,10 +87,19 @@ IsSession = ~(cellfun(@isempty, {STUDY.datasetinfo.session}));
 if sum(IsSession) ~= length(IsSession)
     STUDY = std_checkdatasession(STUDY, ALLEEG, 'verbose', g.verbose);
 end
-
-%Parsing info from clusters and doing some stats
-[clust_stat,SubjClusIC_Matrix] = parse_clustinfo(STUDY,g.parentcluster);
-clust_stat                     = std_clustat(STUDY,g.parentcluster,'cls_stat',clust_stat);
+if isempty(g.handles)  || isempty(getappdata(g.handles.mainfig,'clust_statout')) || isempty(getappdata(g.handles.mainfig,'SubjClusIC_Matrix'))
+    %Parsing info from clusters and doing some stats
+    [clust_stat,SubjClusIC_Matrix] = parse_clustinfo(STUDY,g.parentcluster);
+    clust_stat                     = std_clustat(STUDY,g.parentcluster,'cls_stat',clust_stat);
+    
+    if ~isempty(g.handles)
+        setappdata(g.handles.mainfig,'clust_statout',clust_stat);
+        setappdata(g.handles.mainfig,'SubjClusIC_Matrix',SubjClusIC_Matrix);
+    end
+else
+    clust_stat        = getappdata(g.handles.mainfig,'clust_statout');
+    SubjClusIC_Matrix = getappdata(g.handles.mainfig,'SubjClusIC_Matrix');
+end
 
 % Plots
 %..........................................................................
@@ -106,7 +114,6 @@ if (g.plotinfo == 1)
             std_plotclsmeasure(clust_stat.stats,g.calc-1);   
     end
 end
-
 %..........................................................................
 
 % Restitute original session values
@@ -189,6 +196,6 @@ if g.csvsave
 end
 
 %..........................................................................
-if isfield(clust_stat,'clust')
-    clust_statout = clust_stat.clust;
+if isfield(clust_stat,'clust') && isfield(clust_stat,'stats')
+    clust_statout = clust_stat;
 end
