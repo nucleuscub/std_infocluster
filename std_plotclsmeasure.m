@@ -45,7 +45,7 @@ catch
 end
 SLABEL_FONTSIZE = 12;
 
-fignames = {'Mean Distance from Centroind', 'Summatory of Distances to Centroid'};
+fignames = {'Mean Distance from Centroid', 'Summatory of Distances to Centroid'};
 
 figure('name',fignames{iplot}, ...
        'color', [.66 .76 1],...
@@ -60,9 +60,9 @@ switch iplot
     case 1 % centroid_distmean and stdv
         for i = 1:nplots
             subplot(nplots,1,i);
-            errorbar([datmeasures.(namemeasure{i}).centroid_distmean],[datmeasures.(namemeasure{i}).centroid_diststd]);
+            errorbar([datmeasures.(namemeasure{i}).centroid_distmean],[datmeasures.(namemeasure{i}).centroid_diststd],'rx');
             xlim([1,length([datmeasures.(namemeasure{i}).centroid_distmean])]);
-            ylabel({namemeasure{i};'au'},'fontsize', SLABEL_FONTSIZE,'fontweight','bold');
+            ylabel({namemeasure{i};'a/u'},'fontsize', SLABEL_FONTSIZE,'fontweight','bold');
             if i == nplots
                 xlabel('Cluster','fontsize', SLABEL_FONTSIZE,'fontweight','bold');
             end
