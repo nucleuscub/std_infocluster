@@ -32,7 +32,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function std_plotclsmeasure(datmeasures,iplot)
+function std_plotclsmeasure(STUDY,parentcluster,datmeasures,iplot)
 
 % Settings
 try
@@ -44,13 +44,27 @@ catch
     THRESHOLD_BIN = 16;
 end
 SLABEL_FONTSIZE = 12;
+zflag = 1;
 
-fignames = {'Mean Distance from Centroid', 'Summatory of Distances to Centroid'};
+% Getting clusters names
+hits_temp = cellfun(@(x)strcmp(x,parentcluster),{STUDY.cluster.name});
+parent_indx = find(hits_temp);
+cls = (parent_indx+1):(parent_indx + length(STUDY.cluster(parent_indx).child));
+cls_names = {STUDY.cluster(cls).name}';
+
+for i=1:length(cls)
+    clsname{i} = num2str(cls(i));
+end
+
+
+fignames = {'Mean Distance from Centroid (z-score)', 'Summatory of Distances to Centroid'};
 
 figure('name',fignames{iplot}, ...
-       'color', [.66 .76 1],...
+       'color', [.66 .76 1],...s
        'Tag','clusterinfo_plot2',...
-       'numbertitle', 'off');
+       'numbertitle', 'off',...
+       'Units', 'Normalized',...
+       'Position', [0.0925 0.1308 0.6769 0.7342]);
 hold on;
 
 namemeasure = fieldnames(datmeasures);
@@ -60,11 +74,24 @@ switch iplot
     case 1 % centroid_distmean and stdv
         for i = 1:nplots
             subplot(nplots,1,i);
-            errorbar([datmeasures.(namemeasure{i}).centroid_distmean],[datmeasures.(namemeasure{i}).centroid_diststd],'rx');
-            xlim([1,length([datmeasures.(namemeasure{i}).centroid_distmean])]);
-            ylabel({namemeasure{i};'a/u'},'fontsize', SLABEL_FONTSIZE,'fontweight','bold');
+            if zflag
+                h = errorbar(zscore([datmeasures.(namemeasure{i}).centroid_distmean]),zscore([datmeasures.(namemeasure{i}).centroid_diststd]),'rx');
+                if i == 1, set(get(gca,'Title'),'String','Mean Distance from Centroid \pm Std (z-score)', 'Interpreter', 'tex','Fontsize',11); end
+                set(gca, 'XTickLabel', []);
+                set(gca, 'XTick', [1:length([datmeasures.(namemeasure{i}).centroid_distmean])]);
+                hold on;
+            else
+                h = errorbar([datmeasures.(namemeasure{i}).centroid_distmean],[datmeasures.(namemeasure{i}).centroid_diststd],'rx');
+                hold on;
+                
+            end
+            plot([0.5:length([datmeasures.(namemeasure{i}).centroid_distmean])+0.5],zeros(1,length([datmeasures.(namemeasure{i}).centroid_distmean])+1),'LineStyle',':','LineWidth',0.1,'Color','b');
+            set(h,'LineWidth',1,'MarkerSize',6, 'Marker', 's', 'MarkerEdgeColor','k','MarkerFaceColor',[.49 1 .63]);
+            xlim([0.5,length([datmeasures.(namemeasure{i}).centroid_distmean])+0.5]);
+            ylabel({namemeasure{i}},'fontsize', SLABEL_FONTSIZE,'fontweight','bold');
             if i == nplots
                 xlabel('Cluster','fontsize', SLABEL_FONTSIZE,'fontweight','bold');
+                set(gca, 'XTickLabel', clsname);
             end
            grid on; 
         end
