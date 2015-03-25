@@ -111,7 +111,7 @@ if (g.plotinfo == 1)
             
         case 2
             % 2 -Compactnes of clusters 
-            std_plotclsmeasure(clust_stat.stats,g.calc-1);   
+            std_plotclsmeasure(STUDY,g.parentcluster,clust_stat.stats,g.calc-1);   
     end
 end
 %..........................................................................
@@ -123,7 +123,7 @@ if g.keepsession
         [STUDY.datasetinfo.session] = deal('');
     else
         for i = 1:length(STUDY.datasetinfo)
-            STUDY.datasetinfo(i).session = OrigSession(i);
+            STUDY.datasetinfo(i).session = OrigSession{i};
         end
     end
 end
