@@ -43,6 +43,7 @@ catch
     BACKEEGLABCOLOR =[.66 .76 1];
     THRESHOLD_BIN = 16;
 end
+LABEL_FONTSIZE  = 14;
 SLABEL_FONTSIZE = 12;
 zflag = 1;
 
@@ -76,7 +77,7 @@ switch iplot
             subplot(nplots,1,i);
             if zflag
                 h = errorbar(zscore([datmeasures.(namemeasure{i}).centroid_distmean]),zscore([datmeasures.(namemeasure{i}).centroid_diststd]),'rx');
-                if i == 1, set(get(gca,'Title'),'String','Mean Distance from Centroid \pm Std (z-score)', 'Interpreter', 'tex','Fontsize',11); end
+                if i == 1, set(get(gca,'Title'),'String','Mean Distance from Centroid \pm Std (z-score)', 'Interpreter', 'tex','Fontsize',LABEL_FONTSIZE); end
                 set(gca, 'XTickLabel', []);
                 set(gca, 'XTick', [1:length([datmeasures.(namemeasure{i}).centroid_distmean])]);
                 hold on;
@@ -88,10 +89,11 @@ switch iplot
             plot([0.5:length([datmeasures.(namemeasure{i}).centroid_distmean])+0.5],zeros(1,length([datmeasures.(namemeasure{i}).centroid_distmean])+1),'LineStyle',':','LineWidth',0.1,'Color','b');
             set(h,'LineWidth',1,'MarkerSize',6, 'Marker', 's', 'MarkerEdgeColor','k','MarkerFaceColor',[.49 1 .63]);
             xlim([0.5,length([datmeasures.(namemeasure{i}).centroid_distmean])+0.5]);
-            ylabel({namemeasure{i}},'fontsize', SLABEL_FONTSIZE,'fontweight','bold');
+            ylabel({namemeasure{i}},'fontsize', LABEL_FONTSIZE,'fontweight','bold');
+            set(gca,'fontsize',SLABEL_FONTSIZE);
             if i == nplots
-                xlabel('Cluster','fontsize', SLABEL_FONTSIZE,'fontweight','bold');
-                set(gca, 'XTickLabel', clsname);
+                xlabel('Cluster','fontsize', LABEL_FONTSIZE,'fontweight','bold');
+                set(gca, 'XTickLabel', clsname,'fontsize',SLABEL_FONTSIZE);
             end
            grid on; 
         end
