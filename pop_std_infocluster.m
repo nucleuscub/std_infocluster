@@ -56,6 +56,10 @@ if nargin < 2
     help pop_std_infocluster;
     return;
 end
+ if isempty(unique([STUDY.cluster.parent])) || isempty({STUDY.cluster.child})
+      fprintf(2,'pop_std_infocluster : No clusters to display\n')
+     return;
+ end
 
 try
     options = varargin;
@@ -102,7 +106,8 @@ if nargin < 3 || pop_flag ==1
         'NumberTitle','off',...
         'Units', 'Normalized',...
         'Color', color,...
-        'Position',[0.433,0.672,0.237,0.147]);
+        'Position',[0.433,0.672,0.237,0.147],...
+        'Resize', 'off');
     
     
     setappdata(handles.mainfig,'STUDY',STUDY);           %handles.STUDY  = STUDY;
@@ -168,12 +173,14 @@ if nargin < 3 || pop_flag ==1
     
 end
 % OUTPUTS
-STUDY          = getappdata(handles.mainfig,'STUDY');
-clust_statout  = getappdata(handles.mainfig,'clust_statout');
-
-args = getappdata(handles.mainfig,'args');
-% com = ['[STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,' args{:}  ');']
-com            = 'Need to be updated';
+if isvalid(handles.mainfig)
+    STUDY          = getappdata(handles.mainfig,'STUDY');
+    clust_statout  = getappdata(handles.mainfig,'clust_statout');
+    args           = getappdata(handles.mainfig,'args');
+    %com            = ['[STUDY , clust_statout] = std_infocluster(STUDY,ALLEEG,' args{:}  ');']
+    com            = 'Need to be updated';
+    close(handles.mainfig);
+end
 
 %**************************************************************************
 %**************************************************************************
@@ -181,7 +188,7 @@ com            = 'Need to be updated';
 
 % _________________________________________________________________________
 function callback_buton_cancel(src,eventdata,h)
-close(h);
+uiresume(h);
 
 % _________________________________________________________________________
 function callback_button_path(src,eventdata,handles)
@@ -226,9 +233,9 @@ function handles = callback_button_ok(src,eventdata,handles)
 options = '';
 
 %Check  and retrieving GUI inputs
-ALLEEG    = getappdata(0,'ALLEEG');                                      % retrievineg ALLEEG
-STUDY     = getappdata(0,'STUDY');                                       % retrievineg STUDY
-opts      = getappdata(0,'opts');                                        % retrievineg opts
+ALLEEG    = getappdata(handles.mainfig,'ALLEEG');                                      % retrievineg ALLEEG
+STUDY     = getappdata(handles.mainfig,'STUDY');                                       % retrievineg STUDY
+opts      = getappdata(handles.mainfig,'opts');                                        % retrievineg opts
 flag_run  = 1;                                                           % Status flag 
 
 opts.parentcluster   = char(get(handles.popup_parent, 'String'));
