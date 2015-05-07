@@ -1,107 +1,134 @@
-% Type description for a property. 
-% Supports everything except for function handles, generic cell arrays, and structs of any kind.
+% Type information on a property.
+% This class encapsulates type, shape and domain constraints on property
+% values.
 %
-% Offers the following functionality:
-%   * value/type/shape assignability test (CanAccept*)
-%   * value conversion (Matlab <-> Java, type-guided)
-%   * auto-discovery from values (of type/shape)
-%   * type queries (isnumeric, etc)
-%   * setters (Type,Shape,Domain)
+% Examples:
+% PropertyType('denserealsingle', 'scalar')
+%    creates a non-sparse single real scalar with unrestricted value
+% PropertyType('denserealdouble', 'scalar', [-1,1])
+%    creates a non-sparse double real scalar with value in range -1 to 1
+% PropertyType('char', 'row', {'spring','summer','fall','winter'})
+%    creates a character array which may be either be 'spring', 'summer',
+%    'fall' or 'winter'
+% PropertyType('logical', 'column', {'A','B','C'})
+%    creates a set whose elements are 'A', 'B' and 'C'; the logical vector
+%    is an indexer into this set, e.g. [1 1 0] maps to the set {'A','B'}
 %
-% Notes:
-%   A reason to not have structures here is that they are supported by the PropertyGridField hierarchy, anyway...
-%   
-%
+% See also: PropertyGridField
+
 % Copyright 2010 Levente Hunyadi
-
-classdef PropertyType    
-    properties        
-        PrimitiveType = 'denserealdouble';      % The underlying per-element MATLAB type; string.
-                                                % supports every primitive type, and excludes function_handle, generic cell, struct
-                                                
-        Shape = 'scalar';                       % Allowed array dimensions (empty,scalar,row,column,matrix)
-        
-        Domain = [];                            % Valid domain (a subset of the type):
-                                                %  * [] = unrestricted
-                                                %  * {elem,elem,elem, ...} = enumeration of discrete domain
-                                                %  * [lo hi] = numeric range,inclusive        
-    end    
-    properties (Access = protected)
-        ObjectType = '';                        % this keeps the object type namespace separate from the primitive type namespace...
+classdef PropertyType
+    properties
+        % The underlying MatLab type for the property.
+        PrimitiveType = 'denserealdouble';
+        % The expected dimensions for the property.
+        Shape = 'scalar';
+        % A cell array of possible property values (or {} if unrestricted).
+        Domain = [];
     end
-    
+    properties (Access = protected)
+        ObjectType = '';
+    end
     methods
-
-        
-        % --- CORE OPERATIONS ---
-
-        % constructor        
         function self = PropertyType(type, shape, domain)
             self.PrimitiveType = type;
             self.Shape = shape;
             if nargin > 2
-                self.Domain = domain; end
+                self.Domain = domain;
+            end
+        end
+        
+        function s = char(self)
+        % Compact textual representation of property type information.
+            if ~isempty(self.Shape)
+                s = sprintf('%s/%s', self.PrimitiveType, self.Shape);
+            else
+                s = self.PrimitiveType;
+            end
+            if ~isempty(self.Domain)
+                if iscellstr(self.Domain)
+                    s = [s ' ' strjoin(',', self.Domain)];
+                elseif isnumeric(self.Domain)
+                    s = [s ' ' mat2str(self.Domain)];
+                end
+            end
+        end
+        
+        function tf = islogical(self)
+            tf = strcmp(self.PrimitiveType, 'logical');
+        end
+        
+        function tf = isinteger(self)
+            tf = any(strmatch(self.PrimitiveType, {'int8','uint8','int16','uint16','int32','uint32','int64','uint64'}, 'exact'));
+        end
+        
+        function tf = isfloat(self)
+            tf = any(strmatch(self.PrimitiveType, {'denserealsingle','denserealdouble','densecomplexsingle','densecomplexdouble','sparserealsingle','sparserealdouble','sparsecomplexsingle','sparsecomplexdouble'}, 'exact'));
+        end
+        
+        function tf = isnumeric(self)
+            tf = isinteger(self) || isfloat(self);
+        end
+        
+        function tf = isreal(self)
+            tf = any(strmatch(self.PrimitiveType, {'denserealsingle','denserealdouble','sparserealsingle','sparserealdouble'}, 'exact'));
+        end
+        
+        function tf = is2d(self)
+            tf = any(strmatch(self.Shape, {'row','column','matrix'}, 'exact'));
+        end
+        
+        function tf = isvector(self)
+            tf = any(strmatch(self.Shape, {'row','column'}, 'exact'));
+        end
+        
+        function tf = isstring(self)
+            tf = strcmp(self.PrimitiveType, 'char') && strcmp(self.Shape, 'row');
+        end
+        
+        function tf = isset(self)
+            tf = islogical(self) && isvector(self) && ~isempty(self.Domain);
         end
 
-        % whether the given native MATLAB value can be represented by the type (by default without precision loss)
-        function tf = CanAccept(self, value, precisionloss)
-            if ~isscalar(self)
-                error('This operation can only be applied to scalar PropertyTypes'); end
-            if nargin < 3
-                precisionloss = false; end
-            if isempty(value)
-                tf = true;
-            elseif isobject(value)
-                tf = (strcmp(self.PrimitiveType,'object') && isempty(self.ObjectType)) || (~isempty(self.ObjectType) && metaclass(value) <= meta.class.fromName(self.ObjectType));
-            elseif (isnumeric(value) || islogical(value) || ischar(value)) && any(isnan(value(:)));
-                tf = false; % cko: why is NaN disallowed?
-            else
-                % cko: note - there may be problems with [] here, so it is safer to supply an appropriately-typed [] here
-                tf = PropertyType.CanAcceptType(self.PrimitiveType, PropertyType.AutoDiscoverType(value), precisionloss) ...
-                     && PropertyType.CanAcceptShape(self.Shape, PropertyType.AutoDiscoverShape(value)) ...
-                     && self.CanAcceptValue(value);
-            end
-        end       
-        
-        
-        % --- CORE SETTERS ---
-        
         function self = set.PrimitiveType(self, type)
-            if ~any(strcmp(type,{ ...
-                'logical', 'cellstr', 'char', 'object',...
+            validateattributes(type, {'char'}, {'nonempty','row'});
+            self.PrimitiveType = validatestring(type, { ...
+                'logical', ...
+                'char', ...
                 'int8','uint8','int16','uint16','int32','uint32','int64','uint64', ...
                 'denserealsingle','denserealdouble', ...
                 'densecomplexsingle','densecomplexdouble', ...
                 'sparserealsingle','sparserealdouble', ...
-                'sparsecomplexsingle','sparsecomplexdouble'}))
-                error(['Unsupported type: ' type]); end
-            self.PrimitiveType = type;
+                'sparsecomplexsingle','sparsecomplexdouble', ...
+                'cellstr', ...
+                'object'});
         end
         
         function self = set.Shape(self, shape)
-            if ~any(strcmp(shape,{'scalar','row','column','matrix','empty'}))
-                error(['Unsupported shape: ' shape]); end
-            self.Shape = shape;
+            validateattributes(shape, {'char'}, {'nonempty','row'});
+            self.Shape = validatestring(shape, {'scalar','row','column','matrix','empty'});  % 'empty' is a pseudo-shape for the 0-by-0 empty matrix
         end
         
         function self = set.Domain(self, domain)
-            % do a few error checks...
             if isempty(domain)
-                % okay
-            elseif ~isscalar(self) && ~isstring(self) && ~(islogical(self) && isvector(self))
+                self.Domain = [];
+                return;
+            end
+            if ~isscalar(self) && ~isstring(self) && ~(islogical(self) && isvector(self))
                 error('PropertyType:InvalidArgumentValue', ...
                     'Domain can be set only for scalars, strings or logical vectors.');
-            elseif iscell(domain)
-                if min(size(domain)) ~= 1
-                    error('The domain must be a vector-shaped cell aray.'); end
+            end
+            if iscell(domain)
+                validateattributes(domain, {'cell'}, {'vector'});
                 if ~(islogical(self) && isvector(self))  % interpret as exhaustive enumeration of domain elements
-                    typ = struct('PrimitiveType',{self.PrimitiveType},'Shape',{self.Shape},'Domain',{self.Domain});                                    
                     for k = 1 : numel(domain)
-                        hlp_microcache('propaccept',@check_accept_value,typ,domain{k},class(domain{k})); end
+                        assert(self.CanAccept(domain{k}), ...
+                            'PropertyType:InvalidArgumentValue', ...
+                            'Invalid value specified for property domain.');
+                    end
                 end
             elseif isnumeric(domain)  % interpret as numeric range for domain elements
-                if min(size(domain)) ~= 1
-                    error('The domain must be vector-shaped.'); end
+                validateattributes(domain, {'numeric'}, {'vector'});
                 assert(isnumeric(self), 'PropertyType:ArgumentTypeMismatch', ...
                     'Closed interval domain is meaningful only for numeric data.');
                 assert(length(domain) == 2, 'PropertyType:InvalidArgumentValue', ...
@@ -114,13 +141,32 @@ classdef PropertyType
             self.Domain = domain;
         end
 
+        function tf = CanAccept(self, value, precisionloss)
+        % Whether the property can accept the given value.
+        %
+        % Output arguments:
+        % tf:
+        %    false if any of the property constaints (type, shape or
+        %    domain) would be violated
+            validateattributes(self, {'PropertyType'}, {'scalar'});
+            if nargin < 3
+                precisionloss = false;
+            end
+            if isobject(value)
+                tf = ~isempty(self.ObjectType) && metaclass(value) <= meta.class.fromName(self.ObjectType);
+            elseif (isnumeric(value) || islogical(value) || ischar(value)) && any(isnan(value(:)));
+                tf = false;
+            else
+                type = PropertyType.AutoDiscoverType(value);
+                shape = PropertyType.AutoDiscoverShape(value);
+                tf = PropertyType.CanAcceptType(self.PrimitiveType, type, precisionloss) ...
+                    && PropertyType.CanAcceptShape(self.Shape, shape) ...
+                    && self.CanAcceptValue(value);
+            end
+        end
         
-        % --- TYPE-GUIDED CONVERSIONS ---
-
-        % convert type to the corresponding MATLAB class
         function clazz = GetPrimitiveMatLabType(self)
-            if ~isscalar(self)
-                error('This operation can only be applied to scalar objects.'); end
+            validateattributes(self, {'PropertyType'}, {'scalar'});
             switch (self.PrimitiveType)
                 case {'logical','char','int8','uint8','int16','uint16','int32','uint32','int64','uint64'}
                     clazz = self.PrimitiveType;
@@ -132,23 +178,21 @@ classdef PropertyType
                     clazz = 'cell';
             end
         end
-
-        % convert type to a MATLAB class that can then be faithfully converted to a Java object of matching type
+        
         function javatype = GetPrimitiveJavaType(self)
-            if ~isscalar(self)
-                error('This operation can only be applied to scalar objects.'); end
+            validateattributes(self, {'PropertyType'}, {'scalar'});
             switch self.PrimitiveType
-                case {'denserealdouble','sparserealdouble'}
-                    matlabtype = 'double';
-                case {'denserealsingle','sparserealsingle'}
+                case {'denserealdouble','sparserealdouble'}  % add a double-precision floating point property
+                    matlabtype = 'double';  % MatLab type that is marshalled to Java
+                case {'denserealsingle','sparserealsingle'}  % add a single-precision floating point property
                     matlabtype = 'single';
                 case {'int8','uint8','int16'}
                     matlabtype = 'int16';
-                case {'uint16','int32'}
+                case {'uint16','int32'}  % add an integer property
                     matlabtype = 'int32';
                 case {'uint32','int64'}
                     matlabtype = 'int64';
-                case 'logical'
+                case 'logical'  % add a logical property
                     matlabtype = 'logical';
                 case {'densecomplexdouble','sparsecomplexdouble','densecomplexsingle','sparsecomplexsingle'}
                     matlabtype = 'cellstr';
@@ -158,42 +202,36 @@ classdef PropertyType
             javatype = javaclass(matlabtype);
         end
         
-        % convert given scalar value to a corresponding Java object
         function javavalue = GetPrimitiveJavaValue(self, value)
-            if isempty(value)
-                javavalue = java.lang.String();
-            else
-                switch self.PrimitiveType
-                    case {'denserealdouble','sparserealdouble'}
-                        javavalue = java.lang.Double(value);
-                    case {'denserealsingle','sparserealsingle'}
-                        javavalue = java.lang.Float(value);
-                    case {'int8','uint8','int16'}
-                        javavalue = java.lang.Short(value);
-                    case {'uint16','int32'}
-                        javavalue = java.lang.Integer(value);
-                    case {'uint32','int64'}
-                        javavalue = java.lang.Long(value);
-                    case 'logical'
-                        javavalue = java.lang.Boolean(value);
-                    case {'densecomplexdouble','sparsecomplexdouble','densecomplexsingle','sparsecomplexsingle'}
-                        javavalue = java.lang.String(mat2str(value));
-                    otherwise
-                        if isnumeric(value) || islogical(value)
-                            javavalue = java.lang.String(mat2str(value));
-                        else
-                            javavalue = java.lang.String(char(value));
-                        end
-                end
+            validateattributes(self, {'PropertyType'}, {'scalar'});
+            switch self.PrimitiveType
+                case {'denserealdouble','sparserealdouble'}  % add a double-precision floating point property
+                    javavalue = java.lang.Double(value);
+                case {'denserealsingle','sparserealsingle'}  % add a single-precision floating point property
+                    javavalue = java.lang.Float(value);
+                case {'int8','uint8','int16'}
+                    javavalue = java.lang.Short(value);
+                case {'uint16','int32'}  % add an integer property
+                    javavalue = java.lang.Integer(value);
+                case {'uint32','int64'}
+                    javavalue = java.lang.Long(value);
+                case 'logical'  % add a logical property
+                    javavalue = java.lang.Boolean(value);
+                case {'densecomplexdouble','sparsecomplexdouble','densecomplexsingle','sparsecomplexsingle'}
+                    javavalue = java.lang.String(mat2str(value));
+                otherwise
+                    if isnumeric(value) || islogical(value)
+                        javavalue = mat2str(value);
+                    else
+                        javavalue = char(value);
+                    end
+                    %error('PropertyType:ArgumentTypeMismatch', 'Type %s is not supported.', self.PrimitiveType);
             end
         end
-
-        % convert given array to Java Vector of Vectors
+        
         function javamatrix = GetJavaVectorOfVectors(self, matrix)
             assert(isnumeric(self) || islogical(self), 'PropertyType:InvalidOperation', ...
                 'Operation supported on numeric and logical matrices only.');
-            assert(ndims(matrix) < 3, 'PropertyType:InvalidOperation', ...
-                'More than 2 dimensions are not supported.');
             javamatrix = java.util.Vector(int32(size(matrix,1)));
             for m = 1 : size(matrix,1)
                 javarow = java.util.Vector(int32(size(matrix,2)));
@@ -204,14 +242,12 @@ classdef PropertyType
             end
         end
         
-        % convert given array to native Java 2D array
         function javamatrix = GetJavaMatrix(self, matrix)
+        % Get MatLab value as Java 2d array of proper type.
             assert(isnumeric(self), 'PropertyType:InvalidOperation', ...
                 'Operation supported on numeric matrices only.');
             assert(numel(matrix) > 0, 'PropertyType:InvalidOperation', ...
                 'Empty values are not supported.');
-            assert(ndims(matrix) < 3, 'PropertyType:InvalidOperation', ...
-                'More than 2 dimensions are not supported.');
             javatype = self.GetPrimitiveJavaType();
             javamatrix = javaArray(char(javatype.getName()), size(matrix,1), size(matrix,2));
             for m = 1 : size(matrix,1)
@@ -220,9 +256,9 @@ classdef PropertyType
                 end
             end
         end
-
-        % convert given array to Java native 1D array
+        
         function javavector = GetJavaVector(self, vector)
+        % Get MatLab value as a Java vector of proper type.
             assert(isnumeric(self), 'PropertyType:InvalidOperation', ...
                 'Operation supported on numeric matrices only.');
             assert(numel(vector) > 0, 'PropertyType:InvalidOperation', ...
@@ -234,8 +270,8 @@ classdef PropertyType
             end
         end
 
-        % convert given value to something that can be represented by Java (if in doubt, this will be a string)
         function javavalue = ConvertToJava(self, value)
+        % Converts a MatLab value into the appropriate Java object.
             switch self.Shape
                 case 'scalar'
                     javavalue = self.GetPrimitiveJavaValue(value);
@@ -248,18 +284,10 @@ classdef PropertyType
                                 javavalue = mat2str(value);
                             end
                         case 'cellstr'
-                            if ~isempty(value)
-                                javavalue = java.lang.String(strjoin(sprintf('\n'), value));
-                            else
-                                javavalue = java.lang.String();
-                            end
+                            javavalue = java.lang.String(strjoin(sprintf('\n'), value));
                         case 'logical'
                             if ~isempty(self.Domain)
-                                if ~any(value)
-                                    javavalue = [];
-                                else
-                                    javavalue = javaStringArray(self.Domain(value));  % value is an indicator vector
-                                end
+                                javavalue = javaStringArray(self.Domain(value));  % value is an indicator vector
                             else
                                 javavalue = mat2str(value);
                             end
@@ -280,9 +308,9 @@ classdef PropertyType
                     end
             end
         end
-
-        % convert Java object into MATLAB object of appropriate type (domain is ignored)
+        
         function [value,stringconversion] = ConvertFromJava(self, javavalue)
+        % Converts a Java object into the appropriate MatLab value.
             stringconversion = false;
             switch self.Shape
                 case 'scalar'
@@ -300,8 +328,6 @@ classdef PropertyType
                         case {'densecomplexdouble','sparsecomplexdouble','densecomplexsingle','sparsecomplexsingle'}
                             value = self.ConvertFromString(javavalue);
                             stringconversion = true;
-                        otherwise
-                            error('Can''t handle that');
                     end
                 case {'row','column'}
                     switch self.PrimitiveType
@@ -329,8 +355,6 @@ classdef PropertyType
                                 'int8','uint8','int16','uint16','int32','uint32','int64','uint64'}
                             value = self.ConvertFromString(javavalue);
                             stringconversion = true;
-                        otherwise
-                            error('Can''t handle that');
                     end
                     switch self.Shape
                         case 'row'
@@ -346,14 +370,22 @@ classdef PropertyType
                                 'char','int8','uint8','int16','uint16','int32','uint32','int64','uint64','logical'}
                             value = self.ConvertFromString(javavalue);
                             stringconversion = true;
-                        otherwise
-                            error('Can''t handle that');
                     end
             end
         end
 
-        % convert a string to a native MATLAB value; results in NaN if there is a type conflict
         function value = ConvertFromString(self, text)
+        % Converts matrix string representation to its numeric value.
+        %
+        % Input arguments:
+        % text:
+        %    a textual representation of a numeric scalar, vector or matrix
+        %
+        % Output arguments:
+        % value:
+        %    a numeric value satisfying all type constraints, or NaN if the
+        %    string cannot be converted or the value cannot be coerced into
+        %    the appropriate type
             text = char(text);
             switch self.Shape
                 case 'scalar'
@@ -371,9 +403,9 @@ classdef PropertyType
             end
             value = self.ConvertFromMatLab(value);
         end
-
-        % convert a native MATLAB value to a value that matches the defined type
+        
         function value = ConvertFromMatLab(self, value)
+        % Casts a MatLab value to the prescribed property type.
             if ~isreal(value) && isnumeric(self) && isreal(self)
                 error('PropertyType:ArgumentTypeMismatch', 'Complex value cannot be coerced into a real type.');
             end
@@ -397,73 +429,22 @@ classdef PropertyType
                     error('PropertyType:ArgumentTypeMismatch', 'Cannot coerce type %s into type %s.', class(value), self.PrimitiveType);
             end
         end
-        
-        
-        % --- TYPE QUERIES ---
-
-        function tf = islogical(self)
-            tf = strcmp(self.PrimitiveType, 'logical');
-        end
-        
-        function tf = isinteger(self)
-            tf = any(strcmp(self.PrimitiveType,{'int8','uint8','int16','uint16','int32','uint32','int64','uint64'}));
-        end
-        
-        function tf = isfloat(self)
-            tf = any(strcmp(self.PrimitiveType,{'denserealsingle','denserealdouble','densecomplexsingle','densecomplexdouble','sparserealsingle','sparserealdouble','sparsecomplexsingle','sparsecomplexdouble'}));
-        end
-        
-        function tf = isnumeric(self)
-            tf = isinteger(self) || isfloat(self);
-        end
-        
-        function tf = isreal(self)
-            tf = any(strcmp(self.PrimitiveType,{'denserealsingle','denserealdouble','sparserealsingle','sparserealdouble'}));
-        end
-        
-        function tf = is2d(self)
-            tf = any(strcmp(self.Shape,{'row','column','matrix'}));
-        end
-        
-        function tf = isvector(self)
-            tf = any(strcmp(self.Shape,{'row','column'}));
-        end
-        
-        function tf = isstring(self)
-            tf = strcmp(self.PrimitiveType,'char') && strcmp(self.Shape,'row');
-        end
-        
-        function tf = isset(self)
-            tf = islogical(self) && isvector(self) && ~isempty(self.Domain);
-        end
-        
-        
-        % --- MISC ---
-        
-        % tostring()
-        function s = char(self)
-            if ~isempty(self.Shape)
-                s = sprintf('%s/%s', self.PrimitiveType, self.Shape);
-            else
-                s = self.PrimitiveType;
-            end
-            if ~isempty(self.Domain)
-                if iscellstr(self.Domain)
-                    s = [s ' ' strjoin(',', self.Domain)];
-                elseif isnumeric(self.Domain)
-                    s = [s ' ' mat2str(self.Domain)];
-                end
-            end
-        end        
     end
-         
+    methods (Access = private)
+        function tf = CanAcceptValue(self, value)
+        % Whether the property constraints allow the value to be accepted.
+            if islogical(self) && isvector(self)  % interpret logical vector as a set
+                tf = isempty(self.Domain) || numel(value) == numel(self.Domain);  % size of logical vector corresponds to size of universe
+            else  % test whether domain contains value
+                tf = PropertyType.IsInDomain(self.Domain, value);
+            end
+        end
+    end
     methods (Static)
-        
-        
-        % --- TYPE/SHAPE DISCOVERY ---
-        
-        % create a propertytype specifically matching the given value
-        function obj = AutoDiscover(value,cls) %#ok<INUSD>
+        function obj = AutoDiscover(value)
+        % Constructs a property type instance based on a value.
+        % The property type is chosen to be the most specific possible that
+        % fits the given value.
             if isobject(value)
                 obj = PropertyType('object', PropertyType.AutoDiscoverShape(value));
                 obj.ObjectType = class(value);
@@ -471,8 +452,7 @@ classdef PropertyType
                 obj = PropertyType(PropertyType.AutoDiscoverType(value), PropertyType.AutoDiscoverShape(value));
             end
         end
-
-        % determine the type of the given value
+        
         function type = AutoDiscoverType(value)
             clazz = class(value);
             switch clazz
@@ -503,7 +483,6 @@ classdef PropertyType
             end
         end
         
-        % determine the shape of the given value
         function shape = AutoDiscoverShape(value)
             if ndims(value) > 2
                 error('PropertyType:InvalidArgumentValue', ...
@@ -521,16 +500,20 @@ classdef PropertyType
                 shape = 'matrix';
             end
         end
-    
         
-        % --- TYPE / SHAPE MATCHING ---
-        
-        % check whether a property of some type can hold a value of some other type (with or without loss of precision)
         function tf = CanAcceptType(generaltype, specifictype, precisionloss)
+        % Type assignment check.
+        %
+        % Output arguments:
+        % tf:
+        %    true if a variable of the specific type could be assigned to a
+        %    variable of the general type
+            validateattributes(generaltype, {'char'}, {'nonempty','row'});
+            validateattributes(specifictype, {'char'}, {'nonempty','row'});
             if nargin < 3
                 precisionloss = false;
             end
-            if any(strcmp(generaltype, specifictype))
+            if strcmp(generaltype, specifictype)
                 tf = true;
                 return;
             end
@@ -562,16 +545,9 @@ classdef PropertyType
                         type = [type {'denserealdouble','sparserealdouble'}];
                     end
                 case {'int64','uint64'}
-                    type = {'int8','uint8','int16','uint16','int32','uint32', ...
-                        'denserealsingle','denserealdouble', ...        % cko: added these to make PropertyType less picky!
-                        'densecomplexsingle','densecomplexdouble', ...
-                        'sparserealsingle','sparserealdouble'}; 
-
+                    type = {'int8','uint8','int16','uint16','int32','uint32'};
                 case {'int32','uint32'}
-                    type = {'int8','uint8','int16','uint16', ...
-                        'denserealsingle','denserealdouble', ...        % cko: added these to make PropertyType less picky!
-                        'densecomplexsingle','densecomplexdouble', ...
-                        'sparserealsingle','sparserealdouble'}; 
+                    type = {'int8','uint8','int16','uint16'};
                 case {'int16','uint16'}
                     type = {'int8','uint8'};
                 case {'int8','uint8'}
@@ -585,12 +561,19 @@ classdef PropertyType
                 otherwise
                     type = {};
             end
-            tf = any(strcmp(specifictype,type));
+            tf = any(strmatch(specifictype, type, 'exact'));
         end
-
-        % check whether a property of some shape can hold a value of some other shape (with or without loss of precision)
+        
         function tf = CanAcceptShape(generalshape, specificshape)
-            if any(strcmp(generalshape, specificshape))
+        % Shape assignment check.
+        %
+        % Output arguments:
+        % tf:
+        %    true if a variable of the specific shape could be assigned to
+        %    a variable of the general shape
+            validateattributes(generalshape, {'char'}, {'nonempty','row'});
+            validateattributes(specificshape, {'char'}, {'nonempty','row'});
+            if strcmp(generalshape, specificshape)
                 tf = true;
                 return;
             end
@@ -602,39 +585,25 @@ classdef PropertyType
                 case 'column'
                     shape = {'scalar','empty'};
                 case 'scalar'
-                    shape = {'empty'}; % cko: allowing 'empty' here
+                    shape = {};
                 case 'empty'
                     shape = {};
                 otherwise
                     shape = {};
             end
-            tf = any(strcmp(specificshape, shape));
+            tf = any(strmatch(specificshape, shape, 'exact'));
         end
         
-        % check whether the given value is in the domain (assuming types match)
         function tf = IsInDomain(domain, value)
-            if isempty(value)
-                tf = true; % cko: added this
-            elseif isempty(domain)
+            if isempty(domain)
                 tf = true;
             elseif iscellstr(domain)
-                tf = any(strcmp(value,domain)); 
+                tf = any(strcmp(value, domain)); 
             elseif iscell(domain)
-                tf = any(cellfun(@(v) v==value, domain)); % FIXME: should this not use isequal()?
+                tf = any(cellfun(@(v) v==value, domain));
             elseif isnumeric(domain) && length(domain) == 2
-                tf = all(value(:) >= min(domain)) && all(value(:) <= max(domain));
+                tf = value >= min(domain) && value <= max(domain);
             end
         end
     end
-        
-    methods (Access = private)
-        % helper: check whether the value is allowed by the domain
-        function tf = CanAcceptValue(self, value)
-            if islogical(self) && isvector(self)  % interpret logical vector as a set
-                tf = isempty(self.Domain) || numel(value) == numel(self.Domain);  % size of logical vector corresponds to size of universe
-            else  % test whether domain contains value
-                tf = PropertyType.IsInDomain(self.Domain, value);
-            end
-        end
-    end    
 end

@@ -31,15 +31,5 @@ else
     h = findobj(findall(0), '-property', 'UserData');
 end
 h = unique(h);
-try
-    for k=1:length(h)
-        pred = fcn(get(h(k), 'UserData'));
-        if isempty(pred)
-            pred = false; end
-        f(k) = pred;
-    end        
-    %f = arrayfun(@(handle) fcn(get(handle, 'UserData')), h, 'UniformOutput',false);
-catch
-    1
-end
+f = arrayfun(@(handle) fcn(get(handle, 'UserData')), h);
 h = h(f);

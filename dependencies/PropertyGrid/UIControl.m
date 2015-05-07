@@ -1,4 +1,4 @@
-% Root class for composite user controls. More form than function, it seems...
+% Root class for composite user controls.
 
 % Copyright 2008-2009 Levente Hunyadi
 classdef UIControl < hgsetget
