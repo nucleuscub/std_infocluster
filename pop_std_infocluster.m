@@ -94,7 +94,7 @@ if nargin < 3 || pop_flag ==1
     if PropeditExist ~= 2 || JidePropExist ~= 2
         WhereIsInfocluster = which('std_infocluster');
         [path,name, ext]   = fileparts(WhereIsInfocluster);
-        addpath([path filesep 'dependencies/PropertyGrid-2010-09-16-mod']);
+        addpath([path filesep 'dependencies/PropertyGrid']);
     end
     
     
@@ -173,7 +173,7 @@ if nargin < 3 || pop_flag ==1
     
 end
 % OUTPUTS
-if isvalid(handles.mainfig)
+if ishandle(handles.mainfig)
     STUDY          = getappdata(handles.mainfig,'STUDY');
     clust_statout  = getappdata(handles.mainfig,'clust_statout');
     args           = getappdata(handles.mainfig,'args');
@@ -238,7 +238,8 @@ STUDY     = getappdata(handles.mainfig,'STUDY');                                
 opts      = getappdata(handles.mainfig,'opts');                                        % retrievineg opts
 flag_run  = 1;                                                           % Status flag 
 
-opts.parentcluster   = char(get(handles.popup_parent, 'String'));
+tmpvals = char(get(handles.popup_parent, 'String'));
+opts.parentcluster = tmpvals(get(handles.popup_parent, 'Value'),:); clear tmpvals;
 opts.calc            = get(handles.popup_prop, 'Value');
 % opts.csvsave         = get(handles.checkbox_save,'Value');
 % if opts.csvsave == 1,  opts.filename = get(handles.edit_save,'String'); end;% csvsave
@@ -304,7 +305,9 @@ editor = PropertyEditor(f, 'Items', items);
 % _________________________________________________________________________
 function callback_changeparent(src,eventdata,handles)
 popup_init = getappdata(handles.mainfig,'popup_init');
-if (handles.popup_parent.Value) ~= popup_init
+tmp_val = get(handles.popup_parent,'Value');
+if (tmp_val) ~= popup_init
     setappdata(handles.mainfig,'clust_stat', []);
     setappdata(handles.mainfig,'SubjClusIC_Matrix', []);
+    setappdata(handles.mainfig,'popup_init',tmp_val);
 end
