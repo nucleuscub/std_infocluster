@@ -79,15 +79,24 @@ LABEL_FONTSIZE = 15;
 SLABEL_FONTSIZE = 12;
 color = BACKEEGLABCOLOR;
 THRESHOLD_BIN = 30;
-
+parentcluster = deblank(parentcluster);
 % Getting clusters names
-hits_temp = cellfun(@(x)strcmp(x,parentcluster),{STUDY.cluster.name});
-parent_indx = find(hits_temp);
-cls = (parent_indx+1):(parent_indx + length(STUDY.cluster(parent_indx).child));
+hits_tmp = cellfun(@(x)strcmp(x,parentcluster),{STUDY.cluster.name});
+parent_indx = find(hits_tmp); clear hits_tmp;
+
+% Getting cls
+for i = 1:length({STUDY.cluster.name})
+    tmpval = STUDY.cluster(i).parent;
+    if isempty(tmpval)
+        hits_tmp(i) = 0;
+    else
+        hits_tmp(i) = strcmp(tmpval{1},parentcluster);
+    end
+end
+cls = find(hits_tmp); clear hits_tmp tmpval;
 cls_names = {STUDY.cluster(cls).name}';
 
 % Check session in data or take from input (now we assume data is comming with session info)
-
 sessions  = cellfun(@(x) x,{STUDY.datasetinfo.session});
  if iscell(sessions)
      sessions = cellfun(@(x) x,sessions);
