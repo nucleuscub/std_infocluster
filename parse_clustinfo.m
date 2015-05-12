@@ -93,7 +93,7 @@ for icls = 1:length(cls)
         end
     end
     % Creating output structure
-    clust_stat.clust(c1).name          = STUDY.cluster(cls).name;
+    clust_stat.clust(c1).name          = STUDY.cluster(cls(icls)).name;
     clust_stat.clust(c1).subj          = {STUDY.datasetinfo(store_sets).subject};
     clust_stat.clust(c1).datasetinfo   = {STUDY.datasetinfo(store_sets)};
     clust_stat.clust(c1).ics           = store_ics;
