@@ -187,6 +187,8 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
                 cls_stat.(strcom)(cls).centroid_distsum   = sum(S(1,2:end));
                 cls_stat.(strcom)(cls).centroid_distmean  = mean(S(1,2:end));
                 cls_stat.(strcom)(cls).centroid_diststd   = std(S(1,2:end));
+                [val,ic] = min(S(2:end,1));
+                cls_stat.(strcom)(cls).iclikecentroid_indx     = ic;
                 
             case {'ersp','itc'}
                 if ~isreal(X) X = abs(X); end; % for ITC data
