@@ -204,7 +204,7 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
                 cls_stat.(strcom)(cls).centroid_distmean  = mean(S(1,2:end));
                 cls_stat.(strcom)(cls).centroid_diststd   = std(S(1,2:end));
                 
-            case 'dipoles'
+            %case 'dipoles'
                 %                 apdata.dipoles = data;
                 
         end

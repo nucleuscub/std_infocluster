@@ -1,7 +1,7 @@
-% parse_clustinfo() - parse cluster info in STUDY structure
+% std_parseclustinfo() - parse cluster info in STUDY structure
 %
 % Usage:
-%   >>  [clust_stat,SubjClusIC_Matrix] = parse_clustinfo(STUDY, parentclust);
+%   >>  [clust_stat,SubjClusIC_Matrix] = std_parseclustinfo(STUDY, parentclust);
 %
 % Inputs:
 %      STUDY         - studyset structure containing some or all files in ALLEEG
@@ -38,32 +38,19 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [clust_stat,SubjClusIC_Matrix] = parse_clustinfo(STUDY,parentcluster)
+function [clust_stat,SubjClusIC_Matrix] = std_parseclustinfo(STUDY,parentcluster)
 
 hits_temp = cellfun(@(x)strcmp(x,deblank(parentcluster)),{STUDY.cluster.name});
 parent_indx = find(hits_temp);
-
+if isempty(parent_indx)
+    frpintf('parse_clustinfo error: Invalid input parentcluster');
+    return
+end
 
 nsets =  length(STUDY.datasetinfo);
 SubjClusIC_Matrix = zeros(length(STUDY.cluster(parent_indx).child),nsets,max(STUDY.cluster(parent_indx).comps));
-
-dsgn = STUDY.currentdesign;
-
+ 
 %--------------------------------------------------------------------------
-cellval = {STUDY.design(dsgn).cell.value}';                                % Change this lane
-
-var1_label = STUDY.design(dsgn).variable(1).label;
-var2_label = STUDY.design(dsgn).variable(2).label;
-
-var1_uniquevals = STUDY.design(dsgn).variable(1).value;
-var2_uniquevals = STUDY.design(dsgn).variable(2).value;
-
-var1_dataval = cellfun(@(x) x(1),cellval);
-var2_dataval = cellfun(@(x) x(2),cellval);
-%--------------------------------------------------------------------------
-
-ivar1 = length(STUDY.design(dsgn).variable(1).value);
-ivar2 = length(STUDY.design(dsgn).variable(2).value);
 
 % Getting cls
 for i = 1:length({STUDY.cluster.name})
@@ -74,33 +61,21 @@ for i = 1:length({STUDY.cluster.name})
         hits_tmp(i) = strcmp(tmpval{1},deblank(parentcluster));
     end
 end
-cls = find(hits_tmp); clear hits_tmp tmpval
+cls = find(hits_tmp); clear hits_tmp tmpval hits_tmp;
 
-c1 = 1;
 for icls = 1:length(cls)
-    c2 = 1;
-    for nv1 = 1:ivar1
-        for nv2 = 1:ivar2
-            allinds   = STUDY.cluster(1,cls(icls)).allinds{nv1,nv2};
-            setinds = STUDY.cluster(1,cls(icls)).setinds{nv1,nv2};
-            tmpset = cell2mat({(STUDY.design(dsgn).cell(setinds).dataset)}');
-            for i = 1:size(tmpset,1)
-                SubjClusIC_Matrix(icls,tmpset(i,:),allinds(i)) = 1;
-                store_sets(c2) = tmpset(i);
-                store_ics(c2)   = allinds(i);
-                c2 = c2+1;
-            end
-        end
-    end
-    % Creating output structure
-    clust_stat.clust(c1).name          = STUDY.cluster(cls(icls)).name;
-    clust_stat.clust(c1).subj          = {STUDY.datasetinfo(store_sets).subject};
-    clust_stat.clust(c1).datasetinfo   = {STUDY.datasetinfo(store_sets)};
-    clust_stat.clust(c1).ics           = store_ics;
-    clust_stat.clust(c1).iv{1}         = var1_dataval(store_sets)';
-    clust_stat.clust(c1).iv{2}         = var2_dataval(store_sets)';
+    store_sets = STUDY.cluster(cls(icls)).sets';
+    store_sets = store_sets(:);
     
-    store_sets = 0;
-    store_ics = 0;
-    c1 = c1 +1;
+    store_ics = repmat(STUDY.cluster(cls(icls)).comps,1,size(STUDY.cluster(cls(icls)).sets,1));
+    
+    for i = 1:size(store_sets,1)
+        SubjClusIC_Matrix(icls,store_sets(i),store_ics(i)) = 1;
+    end
+    
+    % Creating output structure
+    clust_stat.clust(icls).name          = STUDY.cluster(cls(icls)).name;
+    clust_stat.clust(icls).subj          = {STUDY.datasetinfo(store_sets).subject};
+    clust_stat.clust(icls).datasetinfo   = {STUDY.datasetinfo(store_sets)};
+    clust_stat.clust(icls).ics           = store_ics;
 end
