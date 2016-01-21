@@ -89,7 +89,7 @@ if sum(IsSession) ~= length(IsSession)
 end
 if isempty(g.handles)  || isempty(getappdata(g.handles.mainfig,'clust_statout')) || isempty(getappdata(g.handles.mainfig,'SubjClusIC_Matrix'))
     %Parsing info from clusters and doing some stats
-    [clust_stat,SubjClusIC_Matrix] = parse_clustinfo(STUDY,g.parentcluster);
+    [clust_stat,SubjClusIC_Matrix] = std_parseclustinfo(STUDY,g.parentcluster);
     clust_stat                     = std_clustat(STUDY,g.parentcluster,'cls_stat',clust_stat);
     
     if ~isempty(g.handles)
