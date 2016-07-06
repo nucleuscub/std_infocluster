@@ -46,7 +46,7 @@ end
 LABEL_FONTSIZE  = 14;
 SLABEL_FONTSIZE = 12;
 zflag = 1;
-parentcluster = deblank(parentcluster);
+   parentcluster = deblank(parentcluster);
 
 % Getting clusters names
 hits_temp = cellfun(@(x)strcmp(x,parentcluster),{STUDY.cluster.name});
@@ -65,11 +65,11 @@ cls = find(hits_tmp); clear hits_tmp tmpval
 
 
 % cls = (parent_indx+1):(parent_indx + length(STUDY.cluster(parent_indx).child));
-cls_names = {STUDY.cluster(cls).name}';
+clsname = {STUDY.cluster(cls).name}';
 
-for i=1:length(cls)
-    clsname{i} = num2str(cls(i));
-end
+% for i=1:length(cls)
+%     clsname{i} = num2str(cls(i));
+% end
 
 
 fignames = {'Mean Distance from Centroid (z-score)', 'Summatory of Distances to Centroid'};
@@ -82,34 +82,68 @@ figure('name',fignames{iplot}, ...
        'Position', [0.0925 0.1308 0.6769 0.7342]);
 hold on;
 
+
 namemeasure = fieldnames(datmeasures);
 nplots = length(namemeasure);
+plotorder = [find(~strcmp(namemeasure,'jointspace'))' find(strcmp(namemeasure,'jointspace'))];
 
 switch iplot
     case 1 % centroid_distmean and stdv
         for i = 1:nplots
-            subplot(nplots,1,i);
-            if zflag
-                h = errorbar(zscore([datmeasures.(namemeasure{i}).centroid_distmean]),zscore([datmeasures.(namemeasure{i}).centroid_diststd]),'rx');
-                if i == 1, set(get(gca,'Title'),'String','Mean Distance from Centroid \pm Std (z-score)', 'Interpreter', 'tex','Fontsize',LABEL_FONTSIZE); end
-                set(gca, 'XTickLabel', []);
-                set(gca, 'XTick', [1:length([datmeasures.(namemeasure{i}).centroid_distmean])]);
-                hold on;
-            else
-                h = errorbar([datmeasures.(namemeasure{i}).centroid_distmean],[datmeasures.(namemeasure{i}).centroid_diststd],'rx');
-                hold on;
-                
-            end
-            plot([0.5:length([datmeasures.(namemeasure{i}).centroid_distmean])+0.5],zeros(1,length([datmeasures.(namemeasure{i}).centroid_distmean])+1),'LineStyle',':','LineWidth',0.1,'Color','b');
+            handles.(['axes_' num2str(i)]) = subplot(nplots,1,i);
+            m1  = [datmeasures.(namemeasure{plotorder(i)}).centroid_distmean];
+            m2  = [datmeasures.(namemeasure{plotorder(i)}).centroid_diststd];
+            h   = errorbar(m1/std(m1),m2/std(m2),'rx');
+
+            if i == 1, set(get(gca,'Title'),'String','Mean Distance from Centroid \pm Std', 'Interpreter', 'tex','Fontsize',LABEL_FONTSIZE); end
+            set(gca, 'XTickLabel', []);
+            set(gca, 'XTick', [1:length([datmeasures.(namemeasure{plotorder(i)}).centroid_distmean])]);
+            hold on;
+            plot([0.5:length([datmeasures.(namemeasure{plotorder(i)}).centroid_distmean])+0.5],zeros(1,length([datmeasures.(namemeasure{plotorder(i)}).centroid_distmean])+1),'LineStyle',':','LineWidth',0.1,'Color','b');
             set(h,'LineWidth',1,'MarkerSize',6, 'Marker', 's', 'MarkerEdgeColor','k','MarkerFaceColor',[.49 1 .63]);
-            xlim([0.5,length([datmeasures.(namemeasure{i}).centroid_distmean])+0.5]);
-            ylabel({namemeasure{i}},'fontsize', LABEL_FONTSIZE,'fontweight','bold');
+            xlim([0.5,length([datmeasures.(namemeasure{plotorder(i)}).centroid_distmean])+0.5]);
+            if i ~=nplots
+            ylabel({['Measure: ' upper(namemeasure{plotorder(i)})];'Mean Distance'},'fontsize', LABEL_FONTSIZE,'fontweight','bold');
+            end
             set(gca,'fontsize',SLABEL_FONTSIZE);
             if i == nplots
-                xlabel('Cluster','fontsize', LABEL_FONTSIZE,'fontweight','bold');
+                ylabel('Joint measures space','fontsize', LABEL_FONTSIZE-2,'fontweight','bold');
                 set(gca, 'XTickLabel', clsname,'fontsize',SLABEL_FONTSIZE);
+                
+                %--
+                % Rotating Xticklabels
+                lasthandle = handles.(['axes_' num2str(nplots)]);
+                Xt = get(lasthandle,'XTick');
+                Xl = get(lasthandle,'XLim');
+                ax = axis;                 % Current axis limits
+                axis(axis);                % Set the axis limit modes (e.g. XLimMode) to manual
+                Yl = ax(3:4);              % Y-axis limits
+                
+                % Place the text labels
+                t = text(Xt,Yl(1)*ones(1,length(Xt)),get(lasthandle,'xticklabel'));
+                set(t,'HorizontalAlignment','right','VerticalAlignment','top','Rotation',45);
+                
+                set(lasthandle,'XTickLabel','');  % Remove the default labels
+                
+                % Get the Extent of each text object.This loop is unavoidable.
+                for i = 1:length(t)
+                    ext(i,:) = get(t(i),'Extent');
+                end
+                % Determine the lowest point.  The X-label will be placed so that the top is aligned with this point.
+                LowYPoint = min(ext(:,2));
+                
+                % Place the axis label at this point
+                XMidPoint = Xl(1)+abs(diff(Xl))/2;
+                text (XMidPoint,LowYPoint,'Cluster','VerticalAlignment','top',...
+                    'HorizontalAlignment','center',...
+                    'FontWeight','bold',...
+                    'Tag','Xtext',...
+                    'FontSize',LABEL_FONTSIZE);
+                handles.Xtext = findobj(0,'Tag','Xtext');
+                %--
+                
             end
-           grid on; 
+            grid on;
         end
     case 2
         % under development

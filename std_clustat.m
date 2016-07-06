@@ -4,12 +4,12 @@
 %
 %
 % Usage:
-%   >>  clust_stat =  cls_meandev(STUDY,clust_stat)
+%   >>  clust_stat =  std_clustat(STUDY,1)
 %
 %
 % Inputs:
 %    STUDY             - studyset structure containing some or all files in ALLEEG
-%    parentcluster    - Parentcluster to analyze.
+%    parentcluster    - Parentcluster to analyze. Name of Parentcluster.
 %    clust_stat        - Structure with one substructure for each cluster under
 %                        the parentcluster. Each substructure have the following info:
 %                        cluster's name
@@ -38,18 +38,32 @@
 % You should have received a copy of the GNU General Public License
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-function clust_stat =  std_clustat(STUDY,parentcluster,varargin)
+function clust_stat =  std_clustat(STUDY,parentcluster, varargin)
 
 if nargin < 2
     help clustat_meandev;
     return;
 end;
 
-if ~isempty(varargin) && strcmp(varargin{1},'cls_stat')
-    clustinfo = varargin{2};
+try
+    options = varargin;
+    if ~isempty( varargin ),
+        for i = 1:2:numel(options)
+            g.(options{i}) = options{i+1};
+        end
+    else g= []; end;
+catch
+    disp('std_infocluster() error: calling convention {''key'', value, ... } error'); return;
+end;
+try g.cls_stat;         catch, g.cls_stat = [];         end;
+try g.cluster;          catch, g.cluster =  [];         end;
+try g.measure;          catch, g.measure =  '';         end;
+
+if ~isempty(g.cls_stat)
+    clustinfo = g.cls_stat;
 else
     % Getting cluster fact matrix
-    [clustinfo,tmp] = parse_clustinfo(STUDY,parentcluster);
+    [clustinfo,tmp] = std_parseclustinfo(STUDY,parentcluster);
 end
 clustinfo  = clustinfo.clust;
 
@@ -63,11 +77,19 @@ clustinfo  = clustinfo.clust;
 if ~isfield(STUDY.etc, 'preclust') && ~isfield(STUDY.etc.preclust, 'preclustparams') && isempty(STUDY.etc.preclust.preclustparams)
     error('Not enough information provided in STUDY structure');
 end
+if ~isempty(g.measure) && ~isempty(strcmp(g.measure, {'erp', 'spec', 'ersp', 'itc','scalp'}))
+    loop1var = 1;
+else
+    loop1var = length(STUDY.etc.preclust.preclustparams);
+end
 %--------------------------------------------------------------------------
 % Loop per measure used in preclustering
-for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
-
-    strcom = STUDY.etc.preclust.preclustparams{imeasure}{1};
+for imeasure = 1:loop1var;
+    if ~isempty(g.measure)
+        strcom = g.measure;
+    else
+        strcom = STUDY.etc.preclust.preclustparams{imeasure}{1};
+    end
     
     %defult values
     freqrange  = [];
@@ -81,7 +103,15 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
         scalpmodif = 'none';
     end;
     % Loop per clusters
-    for cls = 1 : length(clustinfo)
+    
+    if ~isempty(g.cluster)
+        loop2var = 1;
+        clsindxvect = g.cluster;
+    else
+        loop2var = length(clustinfo);
+        clsindxvect  = 1:length(clustinfo);
+    end
+    for cls = 1 : loop2var
             
 %         filename = {clustinfo(cls).datasetinfo{1}.filename};
 %         pathfile = {clustinfo(cls).datasetinfo{1}.filepath};
@@ -99,9 +129,9 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
         
         % Retreiving datasets (long story while using cell.design)
         % Getting ICs
-        clsindx = find(strcmp(clustinfo(cls).name,{STUDY.cluster.name}));
+        clsindx = find(strcmp(clustinfo(clsindxvect(cls)).name,{STUDY.cluster.name}));
         tmpval = cell2mat(STUDY.cluster(clsindx).allinds)';
-        clustinfo(cls).ics = tmpval(:)'; clear tmpval;
+        clustinfo(clsindxvect(cls)).ics = tmpval(:)'; clear tmpval;
         
         % getting sets
         tmpval = cell2mat(STUDY.cluster(clsindx).setinds)';
@@ -124,7 +154,7 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
             % select ica component ERPs
             % -------------------------
             case 'erp'
-                X = std_readfile(file2read, 'components', clustinfo(cls).ics, 'timelimits', timewindow, 'measure', 'erp');
+                X = std_readfile(file2read, 'components', clustinfo(clsindxvect(cls)).ics, 'timelimits', timewindow, 'measure', 'erp');
                 X = abs(X);
                 
                 % select ica scalp maps
@@ -132,13 +162,13 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
             case 'scalp'
                 
                 for isets = 1:length(file2read)
-                    X(:,isets) = std_readtopo(file2read(isets),1, clustinfo(cls).ics(isets), scalpmodif, 'preclust');
+                    X(:,isets) = std_readtopo(file2read(isets),1, clustinfo(clsindxvect(cls)).ics(isets), scalpmodif, 'preclust');
                 end
                 
                 % select ica comp spectra
                 % -----------------------
             case 'spec'
-                X = std_readfile( file2read, 'components', clustinfo(cls).ics, 'freqlimits', freqrange, 'measure', 'spec');
+                X = std_readfile( file2read, 'components', clustinfo(clsindxvect(cls)).ics, 'freqlimits', freqrange, 'measure', 'spec');
                 if size(X,2) > 1, X = X - repmat(mean(X,2), [1 size(X,2)]); end;
                 X = X - repmat(mean(X,1), [size(X,1) 1]);
                 
@@ -173,7 +203,7 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
                 % --------------------------------
             case  {'ersp', 'itc' }
                 
-                X = std_readfile( file2read, 'components', clustinfo(cls).ics, 'timelimits', timewindow, 'freqlimits', freqrange, 'measure', strcom);
+                X = std_readfile( file2read, 'components', clustinfo(clsindxvect(cls)).ics, 'timelimits', timewindow, 'freqlimits', freqrange, 'measure', strcom);
         end;
         
         % Storing data
@@ -188,14 +218,19 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
                 cls_stat.(strcom)(cls).centroid_distmean  = mean(S(1,2:end));
                 cls_stat.(strcom)(cls).centroid_diststd   = std(S(1,2:end));
                 [val,ic] = min(S(2:end,1));
-                cls_stat.(strcom)(cls).iclikecentroid_indx     = ic;
+                cls_stat.(strcom)(cls).iclikecentroid_indx = ic;
+                
+                if ~isempty(g.measure)
+                    cls_stat.(strcom)(cls).measures = X;
+                end
+                    
                 
             case {'ersp','itc'}
                 if ~isreal(X) X = abs(X); end; % for ITC data
                 cls_stat.(strcom)(cls).mean = mean(X,3);
                 cls_stat.(strcom)(cls).std  = std(X,0,3);
                 
-                % Getting the distance matrix
+                % Getting the distance matrixs
                 valtmp = cat(3,X,cls_stat.(strcom)(cls).mean);
                 valtmp = reshape(valtmp,[size(valtmp,1)*size(valtmp,2),size(valtmp,3)]);
                 
@@ -204,10 +239,26 @@ for imeasure = 1:length(STUDY.etc.preclust.preclustparams);
                 cls_stat.(strcom)(cls).centroid_distmean  = mean(S(1,2:end));
                 cls_stat.(strcom)(cls).centroid_diststd   = std(S(1,2:end));
                 
+                if ~isempty(g.measure)
+                    cls_stat.(strcom)(cls).measures = X;
+                end
+                
             %case 'dipoles'
                 %                 apdata.dipoles = data;
                 
         end
+        % Just for joining space
+        preclustdata = STUDY.cluster(clustinfo(clsindxvect(cls)).clsindx).preclust.preclustdata;
+        cls_stat.jointspace(cls).mean = mean(preclustdata,1);
+        cls_stat.jointspace(cls).std  = std(preclustdata,1);
+        
+        Sjoint = squareform(pdist([cls_stat.jointspace(cls).mean' preclustdata']','euclidean'));
+        cls_stat.jointspace(cls).centroid_distsum    = sum(Sjoint(1,2:end));
+        cls_stat.jointspace(cls).centroid_distmean   = mean(Sjoint(1,2:end));
+        cls_stat.jointspace(cls).centroid_diststd    = std(Sjoint(1,2:end));
+        [trash,ic] = min(Sjoint(2:end,1));
+        cls_stat.jointspace(cls).iclikecentroid_indx = ic;
+        
         clear S X file2read filetmp;
     end
 end

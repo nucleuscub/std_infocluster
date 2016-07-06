@@ -39,11 +39,12 @@
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 function [clust_stat,SubjClusIC_Matrix] = std_parseclustinfo(STUDY,parentcluster)
-
+clust_stat        = [];
+SubjClusIC_Matrix = [];
 hits_temp = cellfun(@(x)strcmp(x,deblank(parentcluster)),{STUDY.cluster.name});
 parent_indx = find(hits_temp);
 if isempty(parent_indx)
-    frpintf('parse_clustinfo error: Invalid input parentcluster');
+    fprintf('parse_clustinfo error: Invalid input parentcluster\n');
     return
 end
 
@@ -67,7 +68,15 @@ for icls = 1:length(cls)
     store_sets = STUDY.cluster(cls(icls)).sets';
     store_sets = store_sets(:);
     
-    store_ics = repmat(STUDY.cluster(cls(icls)).comps,1,size(STUDY.cluster(cls(icls)).sets,1));
+    % NOTE: This is relateve to the whole study and not specific to the
+    % design. This means that.. if a subset of an specific condition is
+    % selected, the the number or STUDY.cluster(i).comps ~=  STUDY.cluster(i). allinds
+%     store_ics = repmat(STUDY.cluster(cls(icls)).comps,1,size(STUDY.cluster(cls(icls)).sets,1));
+    
+    clsindx = find(strcmp(STUDY.cluster(cls(icls)).name,{STUDY.cluster.name}));
+    store_ics = cell2mat(STUDY.cluster(clsindx).allinds)';
+    store_ics = store_ics(:)';
+%     clustinfo(icls).ics = tmpval(:)'; clear tmpval;
     
     for i = 1:size(store_sets,1)
         SubjClusIC_Matrix(icls,store_sets(i),store_ics(i)) = 1;
@@ -77,5 +86,7 @@ for icls = 1:length(cls)
     clust_stat.clust(icls).name          = STUDY.cluster(cls(icls)).name;
     clust_stat.clust(icls).subj          = {STUDY.datasetinfo(store_sets).subject};
     clust_stat.clust(icls).datasetinfo   = {STUDY.datasetinfo(store_sets)};
+%     clust_stat.clust(icls).ics           = store_ics;
     clust_stat.clust(icls).ics           = store_ics;
+    clust_stat.clust(icls).clsindx       = cls(icls);
 end
