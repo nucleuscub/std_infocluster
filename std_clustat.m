@@ -224,7 +224,6 @@ for imeasure = 1:loop1var;
                     cls_stat.(strcom)(cls).measures = X;
                 end
                     
-                
             case {'ersp','itc'}
                 if ~isreal(X) X = abs(X); end; % for ITC data
                 cls_stat.(strcom)(cls).mean = mean(X,3);
