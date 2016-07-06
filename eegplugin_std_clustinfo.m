@@ -1,6 +1,6 @@
 function vers = eegplugin_std_clustinfo( fig, trystrs, catchstrs);
 
-vers = 'Infocluster1.0Beta';
+vers = 'Infocluster2.0Beta';
 
 % add menu to clustedit
 % ---------------------
