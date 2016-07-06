@@ -74,11 +74,10 @@ if isempty(g.session)
     % Step 1: checking IC decomposition
     alleeg_indx  = cell2mat({STUDY.datasetinfo.index});         % data index from study
     sameica = std_findsameica(ALLEEG);
+    UniqueSubj = unique({STUDY.datasetinfo.subject});
     
     if length(sameica) ~= length(alleeg_indx)
         if g.verbose, display('--- Data from same sessions found in the STUDY ---'); end;
-        
-        UniqueSubj = unique({STUDY.datasetinfo.subject});
         
         % Step 2: Identify same ica decomposition
         for i = 1 : length(UniqueSubj)

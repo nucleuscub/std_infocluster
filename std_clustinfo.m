@@ -1,7 +1,7 @@
-% std_infocluster() - sumarize relation of Cluster Vs Subject/Dataset Vs IC
+% std_clustinfo() - sumarize relation of Cluster Vs Subject/Dataset Vs IC
 %
 % Usage:
-%   >>  clustinfo = std_infocluster(STUDY, ALLEEG);
+%   >>  clustinfo = std_clustinfo(STUDY, ALLEEG);
 %
 % Inputs:
 %      STUDY    - studyset structure containing some or all files in ALLEEG
@@ -28,7 +28,7 @@
 %               1st and 2nd independet variables.
 %
 % See also:
-%   std_plotinfocluster
+%   std_plotclustinfo
 %
 % Author: Ramon Martinez-Cancino, SCCN, 2014
 %
@@ -48,14 +48,16 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [STUDY , clust_statout] = std_infocluster(STUDY, ALLEEG, varargin)
+function [STUDY , clust_statout] = std_clustinfo(STUDY, ALLEEG, varargin)
 
 % Checking entries
 if nargin < 2
-    help std_infocluster;
+    help std_clustinfo;
     return;
 end
 
+clust_statout  = [];
+clust_stat     = [];
 try
     options = varargin;
     if ~isempty( varargin ),
@@ -64,7 +66,7 @@ try
         end
     else g= []; end;
 catch
-    disp('std_infocluster() error: calling convention {''key'', value, ... } error'); return;
+    disp('std_clustinfo() error: calling convention {''key'', value, ... } error'); return;
 end;
 
 try g.parentcluster;     catch, g.parentcluster   = STUDY.cluster(1).name;          end; % By default the 1st cluster
@@ -76,8 +78,8 @@ try g.filename;          catch, g.filename        = STUDY.name;                 
 try g.verbose;           catch, g.verbose         = 1;                              end; % verbose
 try g.calc;              catch, g.calc            = 1;                              end; % Choose what to calc
 try g.figlabel;          catch, g.figlabel        = 1;                              end; % Show labels in fig
-
-
+try g.handles;           catch, g.handles         = '';                             end; % Just for calls from GUIs  
+try g.colormapstyle;     catch, g.colormapstyle   = 'Reds';                             end;
 % Checking for session field
 OrigSession = {STUDY.datasetinfo.session};                     % Backing up session info
 IsSession = ~(cellfun(@isempty, {STUDY.datasetinfo.session}));
@@ -85,18 +87,33 @@ IsSession = ~(cellfun(@isempty, {STUDY.datasetinfo.session}));
 if sum(IsSession) ~= length(IsSession)
     STUDY = std_checkdatasession(STUDY, ALLEEG, 'verbose', g.verbose);
 end
-
-%Parsing info from clusters
-[clust_stat,SubjClusIC_Matrix] = parse_clustinfo(STUDY,g.parentcluster);
-
+if isempty(g.handles)  || isempty(getappdata(g.handles.mainfig,'clust_statout')) || isempty(getappdata(g.handles.mainfig,'SubjClusIC_Matrix'))
+    %Parsing info from clusters and doing some stats
+    [clust_stat,SubjClusIC_Matrix] = std_parseclustinfo(STUDY,g.parentcluster);
+    clust_stat                     = std_clustat(STUDY,g.parentcluster,'cls_stat',clust_stat);
+    
+    if ~isempty(g.handles)
+        setappdata(g.handles.mainfig,'clust_statout',clust_stat);
+        setappdata(g.handles.mainfig,'SubjClusIC_Matrix',SubjClusIC_Matrix);
+    end
+else
+    clust_stat        = getappdata(g.handles.mainfig,'clust_statout');
+    SubjClusIC_Matrix = getappdata(g.handles.mainfig,'SubjClusIC_Matrix');
+end
 
 % Plots
 %..........................................................................
-
-% 1 - IC Vs Subj Vs Cluster (that is why infloclust3d)
-
-[mat2plot, UniqSubjInd] = std_plotinfocluster(STUDY,SubjClusIC_Matrix,g.parentcluster,'plot',g.plotinfo,'figlabel',g.figlabel);
-
+if (g.plotinfo == 1)
+    switch g.calc
+        case 1
+            % 1 - IC Vs Subj Vs Cluster (that is why infloclust3d)
+            [mat2plot, UniqSubjInd] = std_plotclustinfo(STUDY,SubjClusIC_Matrix,g.parentcluster,'plot',g.plotinfo,'figlabel',g.figlabel,'colormapstyle',g.colormapstyle);
+            
+        case 2
+            % 2 -Compactnes of clusters 
+            std_plotclsmeasure(STUDY,g.parentcluster,clust_stat.stats,g.calc-1);   
+    end
+end
 %..........................................................................
 
 % Restitute original session values
@@ -106,7 +123,7 @@ if g.keepsession
         [STUDY.datasetinfo.session] = deal('');
     else
         for i = 1:length(STUDY.datasetinfo)
-            STUDY.datasetinfo(i).session = OrigSession(i);
+            STUDY.datasetinfo(i).session = OrigSession{i};
         end
     end
 end
@@ -142,8 +159,9 @@ if g.csvsave
         fprintf(fid,'%s\r\n',data2print);
         fclose(fid);
     end
+     if g.verbose, display(['File successfully saved: ' filename_out1]); end;
         
-    % 2) text file output of the Clsuter, Number of ICs, and  Number of Unique subjects in separate columns.
+    % 2) text file output of the Cluster, Number of ICs, and  Number of Unique subjects in separate columns.
     
     filename_out2 = [g.savepath filesep g.filename '_unique_ICs_Subj.txt'];
     
@@ -174,7 +192,10 @@ if g.csvsave
         fprintf(fid,'%s\r\n',data2print);
         fclose(fid);
     end
+    if g.verbose, display(['File successfully saved: ' filename_out2 ]); end;
 end
 
 %..........................................................................
-clust_statout = clust_stat.clust;
+if isfield(clust_stat,'clust') && isfield(clust_stat,'stats')
+    clust_statout = clust_stat;
+end
